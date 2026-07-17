@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { 
   Building2, 
   QrCode, 
@@ -11,10 +11,13 @@ import {
   Check,
   Smartphone,
   X,
-  Download
+  Download,
+  MoreVertical,
+  Edit2,
+  Trash2,
+  AlertCircle
 } from "lucide-react";
 
-// Mock Data Awal OPD dengan Token Unik Sistem
 const initialOpdList = [
   {
     id: "OPD-001",
@@ -51,22 +54,42 @@ const initialOpdList = [
 ];
 
 export default function OpdPage() {
-  const [opdList] = useState(initialOpdList);
+  const [opdList, setOpdList] = useState(initialOpdList);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedToken, setCopiedToken] = useState(null);
   
-  // State untuk Dialog Cetak
+  // State Stiker
   const [selectedOpd, setSelectedOpd] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const printAreaRef = useRef(null);
 
-  // Filter pencarian OPD
+  // State Registrasi
+  const [isRegModalOpen, setIsRegModalOpen] = useState(false);
+  const [newOpd, setNewOpd] = useState({ name: "", head: "", location: "" });
+
+  // State Edit & Hapus
+  const [editingOpd, setEditingOpd] = useState(null); 
+  const [deletingOpd, setDeletingOpd] = useState(null);
+
+  // State Context Menu (Klik Kanan) & Dropdown Menu
+  const [contextMenu, setContextMenu] = useState(null); // { x: 0, y: 0, opd: null }
+  const [activeDropdown, setActiveDropdown] = useState(null); // ID OPD yang dropdown-nya sedang terbuka
+
+  // Tutup menu-menu mengambang saat klik di luar area
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setContextMenu(null);
+      setActiveDropdown(null);
+    };
+    window.addEventListener("click", handleOutsideClick);
+    return () => window.removeEventListener("click", handleOutsideClick);
+  }, []);
+
   const filteredOpd = opdList.filter(opd => 
     opd.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     opd.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Salin Tautan Cepat
   const handleCopyLink = (token) => {
     const generatedUrl = `https://nettick.gov/report?client=${token}`;
     navigator.clipboard.writeText(generatedUrl);
@@ -74,18 +97,88 @@ export default function OpdPage() {
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
-  // Trigger Modal Cetak Stiker
   const handleOpenPrintModal = (opd) => {
     setSelectedOpd(opd);
     setIsModalOpen(true);
   };
 
-  // Fungsi Cetak Langsung (Hanya Area Stiker)
+  const generateToken = (name) => {
+    const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 10);
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    return `${cleanName}-noc-token-${randomNum}`;
+  };
+
+  // Registrasi Baru
+  const handleRegisterSubmit = (e) => {
+    e.preventDefault();
+    if (!newOpd.name || !newOpd.location) return;
+
+    const nextIdNum = opdList.length > 0 
+      ? Math.max(...opdList.map(o => parseInt(o.id.replace("OPD-", "")))) + 1 
+      : 1;
+    const generatedId = `OPD-${String(nextIdNum).padStart(3, '0')}`;
+    
+    const newOpdData = {
+      id: generatedId,
+      name: newOpd.name,
+      head: newOpd.head || "Belum ditentukan",
+      token: generateToken(newOpd.name),
+      totalTickets: 0,
+      location: newOpd.location
+    };
+
+    setOpdList([newOpdData, ...opdList]);
+    setIsRegModalOpen(false);
+    setNewOpd({ name: "", head: "", location: "" });
+  };
+
+  // Edit Submit
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    if (!editingOpd.name || !editingOpd.location) return;
+
+    setOpdList(opdList.map(opd => {
+      if (opd.id === editingOpd.id) {
+        // Jika nama berubah, kita buatkan token yang lebih relevan (opsional)
+        const updatedToken = opd.name !== editingOpd.name 
+          ? generateToken(editingOpd.name) 
+          : opd.token;
+
+        return {
+          ...opd,
+          name: editingOpd.name,
+          head: editingOpd.head || "Belum ditentukan",
+          location: editingOpd.location,
+          token: updatedToken
+        };
+      }
+      return opd;
+    }));
+
+    setEditingOpd(null);
+  };
+
+  // Hapus Submit
+  const handleDeleteConfirm = () => {
+    if (!deletingOpd) return;
+    setOpdList(opdList.filter(opd => opd.id !== deletingOpd.id));
+    setDeletingOpd(null);
+  };
+
+  // Event Handler Klik Kanan Kustom
+  const handleContextMenu = (e, opd) => {
+    e.preventDefault(); // Mencegah menu bawaan browser muncul
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      opd: opd
+    });
+    setActiveDropdown(null); // Tutup dropdown jika sedang terbuka
+  };
+
+  // Cetak Handler
   const handlePrint = () => {
     const printContent = printAreaRef.current.innerHTML;
-    const originalContent = document.body.innerHTML;
-
-    // Membuka jendela cetak bersih khusus untuk stiker
     const win = window.open("", "_blank", "width=600,height=600");
     win.document.write(`
       <html>
@@ -95,7 +188,6 @@ export default function OpdPage() {
           <style>
             @media print {
               body { margin: 0; padding: 20px; }
-              .no-print { display: none; }
             }
           </style>
         </head>
@@ -115,67 +207,55 @@ export default function OpdPage() {
     win.document.close();
   };
 
-  // Fungsi Mengunduh Seluruh Desain Stiker Menjadi Satu Gambar PNG Utuh
+  // Unduh Handler
   const handleDownloadQr = () => {
     if (!selectedOpd) return;
 
-    // 1. Buat elemen canvas sementara
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-
-    // Tentukan resolusi stiker (Rasio 1:1.3 agar tajam saat dicetak/disimpan)
     const width = 400;
     const height = 520;
     canvas.width = width;
     canvas.height = height;
 
-    // 2. Gambar Background Putih & Border Halus
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, width, height);
     
-    ctx.strokeStyle = "#E4E4E7"; // zinc-200
+    ctx.strokeStyle = "#E4E4E7";
     ctx.lineWidth = 4;
     ctx.strokeRect(10, 10, width - 20, height - 20);
 
-    // 3. Tulis Header: "NOC NETTICK SYSTEM"
     ctx.textAlign = "center";
-    ctx.fillStyle = "#A1A1AA"; // zinc-400
+    ctx.fillStyle = "#A1A1AA";
     ctx.font = "bold 11px monospace";
     ctx.fillText("NOC NETTICK SYSTEM", width / 2, 45);
 
-    // 4. Tulis Nama OPD (Jika terlalu panjang, kita potong agar pas)
-    ctx.fillStyle = "#09090B"; // zinc-950
+    ctx.fillStyle = "#09090B";
     ctx.font = "bold 16px sans-serif";
     const displayName = selectedOpd.name.length > 30 
       ? selectedOpd.name.substring(0, 28) + "..." 
       : selectedOpd.name;
     ctx.fillText(displayName, width / 2, 75);
 
-    // Lokasi OPD di bawah Nama
-    ctx.fillStyle = "#71717A"; // zinc-500
+    ctx.fillStyle = "#71717A";
     ctx.font = "500 12px sans-serif";
     ctx.fillText(selectedOpd.location, width / 2, 95);
 
-    // 5. Muat dan Gambar QR Code di Tengah Canvas
     const qrImage = new Image();
-    qrImage.crossOrigin = "anonymous"; // Menghindari isu CORS saat menggambar ke canvas
+    qrImage.crossOrigin = "anonymous";
     qrImage.src = getQrUrl(selectedOpd.token);
 
     qrImage.onload = () => {
-      // Posisi gambar QR Code di tengah canvas
       const qrSize = 220;
       const qrX = (width - qrSize) / 2;
       const qrY = 125;
 
-      // Gambar QR Code ke Canvas
       ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
 
-      // 6. Tulis Petunjuk: "PINDAI UNTUK LAPOR GANGGUAN"
-      ctx.fillStyle = "#71717A"; // zinc-500
+      ctx.fillStyle = "#71717A";
       ctx.font = "bold 10px sans-serif";
       ctx.fillText("PINDAI UNTUK LAPOR GANGGUAN", width / 2, 385);
 
-      // 7. Gambar Kotak Badge Token (Background Abu-abu Ringan)
       const badgeText = selectedOpd.token;
       ctx.font = "bold 15px monospace";
       const textWidth = ctx.measureText(badgeText).width;
@@ -185,21 +265,19 @@ export default function OpdPage() {
       const badgeX = (width - badgeWidth) / 2;
       const badgeY = 405;
 
-      ctx.fillStyle = "#F4F4F5"; // zinc-100
+      ctx.fillStyle = "#F4F4F5";
       ctx.beginPath();
-      ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 8); // Membuat sudut rounded
+      ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 8);
       ctx.fill();
       
-      ctx.strokeStyle = "#E4E4E7"; // zinc-200
+      ctx.strokeStyle = "#E4E4E7";
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Tulis Teks Token di dalam Badge
-      ctx.fillStyle = "#18181B"; // zinc-900
+      ctx.fillStyle = "#18181B";
       ctx.textBaseline = "middle";
       ctx.fillText(badgeText, width / 2, badgeY + (badgeHeight / 2));
 
-      // 8. Trigger Unduh Berkas Hasil Gabungan Canvas
       const url = canvas.toDataURL("image/png");
       const a = document.createElement("a");
       a.href = url;
@@ -208,22 +286,17 @@ export default function OpdPage() {
       a.click();
       a.remove();
     };
-
-    qrImage.onerror = () => {
-      alert("Gagal memuat QR Code untuk digabungkan ke stiker.");
-    };
   };
 
-  // Endpoint API QR Code (menggunakan API QR Server publik)
   const getQrUrl = (token) => {
     const targetUrl = `https://nettick.gov/report?client=${token}`;
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetUrl)}&margin=10`;
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       
-      {/* 1. TOP BAR */}
+      {/* TOP BAR */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Manajemen OPD</h1>
@@ -231,13 +304,16 @@ export default function OpdPage() {
             Daftar unit organisasi daerah terintegrasi stiker QR scan laporan mandiri.
           </p>
         </div>
-        <button className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-zinc-200 active:scale-[0.98] self-start sm:self-auto">
+        <button 
+          onClick={() => setIsRegModalOpen(true)}
+          className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-zinc-200 active:scale-[0.98] self-start sm:self-auto"
+        >
           <Plus className="w-4 h-4" />
           Registrasi OPD Baru
         </button>
       </div>
 
-      {/* 2. ALUR CARA KERJA BANNER */}
+      {/* ALUR CARA KERJA BANNER */}
       <div className="bg-zinc-900 text-zinc-100 p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-zinc-800 shadow-sm relative overflow-hidden">
         <div className="space-y-1 max-w-xl z-10">
           <h3 className="text-sm font-bold tracking-tight flex items-center gap-2 text-white">
@@ -245,12 +321,12 @@ export default function OpdPage() {
             Sistem Pindai QR Pelaporan Mandiri
           </h3>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Cetak stiker kode QR dari panel di bawah ini, lalu tempelkan di dekat perangkat jaringan/router internal milik OPD. Perwakilan OPD cukup memindai stiker tersebut menggunakan kamera ponsel untuk langsung melaporkan kendala tanpa perlu mengetik nama instansi mereka kembali.
+            Klik kanan pada baris tabel untuk memunculkan jalan pintas <strong>Ubah</strong> atau <strong>Hapus</strong> instansi. Anda juga dapat menggunakan menu aksi di ujung kanan baris.
           </p>
         </div>
       </div>
 
-      {/* 3. SEARCH & ACTIONS */}
+      {/* SEARCH & ACTIONS */}
       <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -264,7 +340,7 @@ export default function OpdPage() {
         </div>
       </div>
 
-      {/* 4. LIST OPD CARDS TABLE */}
+      {/* LIST OPD TABLE */}
       <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
@@ -275,7 +351,7 @@ export default function OpdPage() {
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">LOKASI / RUANGAN</th>
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider font-mono">TOKEN KODE QR</th>
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-center">TOTAL ADUAN</th>
-                <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-right">CETAK AKSES STIKER</th>
+                <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-right">AKSI / CETAK</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -287,7 +363,11 @@ export default function OpdPage() {
                 </tr>
               ) : (
                 filteredOpd.map((opd) => (
-                  <tr key={opd.id} className="hover:bg-zinc-50/30 transition-colors group">
+                  <tr 
+                    key={opd.id} 
+                    onContextMenu={(e) => handleContextMenu(e, opd)}
+                    className="hover:bg-zinc-50/30 transition-colors group select-none cursor-default"
+                  >
                     <td className="p-4 whitespace-nowrap">
                       <span className="text-xs font-mono font-bold text-zinc-500">{opd.id}</span>
                     </td>
@@ -311,8 +391,11 @@ export default function OpdPage() {
                           {opd.token}
                         </span>
                         <button 
-                          onClick={() => handleCopyLink(opd.token)}
-                          className="p-1 text-zinc-400 hover:text-zinc-950 rounded transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyLink(opd.token);
+                          }}
+                          className="p-1 text-zinc-400 hover:text-zinc-950 rounded transition-colors cursor-pointer"
                           title="Salin Tautan Pelaporan Smart"
                         >
                           {copiedToken === opd.token ? (
@@ -329,13 +412,59 @@ export default function OpdPage() {
                       </span>
                     </td>
                     <td className="p-4 whitespace-nowrap text-right">
-                      <button
-                        onClick={() => handleOpenPrintModal(opd)}
-                        className="cursor-pointer bg-white border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-950 hover:text-white text-[11px] font-bold py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 ml-auto transition-all duration-150 shadow-sm active:scale-95 group-hover:bg-zinc-50 group-hover:hover:bg-zinc-950"
-                      >
-                        <QrCode className="w-3.5 h-3.5 shrink-0" />
-                        <span>Cetak Stiker QR</span>
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenPrintModal(opd);
+                          }}
+                          className="cursor-pointer bg-white border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-950 hover:text-white text-[11px] font-bold py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all duration-150 shadow-sm active:scale-95"
+                        >
+                          <QrCode className="w-3.5 h-3.5 shrink-0" />
+                          <span>Cetak Stiker</span>
+                        </button>
+
+                        {/* Dropdown Menu Trigger */}
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDropdown(activeDropdown === opd.id ? null : opd.id);
+                            }}
+                            className="cursor-pointer p-1.5 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-lg text-zinc-500 hover:text-zinc-950 transition-colors"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Dropdown Card */}
+                          {activeDropdown === opd.id && (
+                            <div className="absolute right-0 mt-1 w-32 bg-white border border-zinc-100 rounded-xl shadow-lg py-1 z-20">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingOpd(opd);
+                                  setActiveDropdown(null);
+                                }}
+                                className="w-full px-3 py-1.5 text-left text-xs font-medium text-zinc-700 hover:bg-zinc-50 flex items-center gap-2 cursor-pointer"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-zinc-400" />
+                                Ubah Data
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeletingOpd(opd);
+                                  setActiveDropdown(null);
+                                }}
+                                className="w-full px-3 py-1.5 text-left text-xs font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-red-450" />
+                                Hapus OPD
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -345,12 +474,169 @@ export default function OpdPage() {
         </div>
       </div>
 
-      {/* 5. DIALOG POPUP PREVIEW & CETAK STIKER (APPLE MINIMALIST MODAL) */}
-      {isModalOpen && selectedOpd && (
+      {/* 7. KUSTOM CONTEXT MENU (KLIK KANAN) */}
+      {contextMenu && (
+        <div 
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          className="fixed bg-white border border-zinc-150 rounded-xl shadow-xl py-1 w-40 z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-3 py-1.5 border-b border-zinc-100 text-[9px] font-bold text-zinc-400 uppercase tracking-wider bg-zinc-50/50">
+            Aksi: {contextMenu.opd.id}
+          </div>
+          <button
+            onClick={() => {
+              setEditingOpd(contextMenu.opd);
+              setContextMenu(null);
+            }}
+            className="w-full px-3 py-2 text-left text-xs font-semibold text-zinc-700 hover:bg-zinc-50 flex items-center gap-2.5 cursor-pointer"
+          >
+            <Edit2 className="w-3.5 h-3.5 text-zinc-450" />
+            Ubah Data
+          </button>
+          <button
+            onClick={() => {
+              setDeletingOpd(contextMenu.opd);
+              setContextMenu(null);
+            }}
+            className="w-full px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2.5 cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+            Hapus OPD
+          </button>
+        </div>
+      )}
+
+      {/* 8. DIALOG MODAL EDIT DATA OPD (APPLE STYLE) */}
+      {editingOpd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm transition-opacity duration-200">
+          <div className="bg-white w-full max-w-md rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden flex flex-col scale-[1.01] transition-transform">
+            
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-800">
+                  <Edit2 className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-xs font-bold text-zinc-800 tracking-tight">Ubah Informasi OPD</span>
+              </div>
+              <button 
+                onClick={() => setEditingOpd(null)}
+                className="cursor-pointer p-1 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-50 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit}>
+              <div className="p-5 space-y-4 bg-zinc-50/30">
+                
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
+                    Nama Instansi / OPD <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingOpd.name}
+                    onChange={(e) => setEditingOpd({ ...editingOpd, name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
+                    Lokasi Penempatan / Ruangan <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingOpd.location}
+                    onChange={(e) => setEditingOpd({ ...editingOpd, location: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
+                    Nama PIC / Kepala Instansi
+                  </label>
+                  <input
+                    type="text"
+                    value={editingOpd.head}
+                    onChange={(e) => setEditingOpd({ ...editingOpd, head: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
+                  />
+                </div>
+
+                <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl text-[10px] text-amber-700 leading-relaxed flex gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Catatan:</strong> Jika Anda mengubah nama instansi secara signifikan, sistem akan meregenerasi token QR baru secara otomatis agar relevan dengan nama baru. Tautan lama kemungkinan tidak akan berfungsi.
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 p-4 border-t border-zinc-100 bg-white">
+                <button
+                  type="button"
+                  onClick={() => setEditingOpd(null)}
+                  className="cursor-pointer bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 font-bold text-xs py-2.5 px-4 rounded-xl transition-all"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all shadow-md"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* 9. DIALOG MODAL KONFIRMASI HAPUS */}
+      {deletingOpd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm transition-opacity duration-200">
           <div className="bg-white w-full max-w-sm rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden flex flex-col scale-[1.01] transition-transform">
             
-            {/* Modal Header */}
+            <div className="p-6 text-center space-y-4">
+              <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-zinc-900">Hapus Instansi OPD?</h3>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  Tindakan ini akan menghapus <strong>{deletingOpd.name}</strong> beserta seluruh riwayat token QR pelaporan mereka secara permanen. Tindakan ini tidak dapat dibatalkan.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 p-4 border-t border-zinc-100 bg-zinc-50/50">
+              <button
+                onClick={() => setDeletingOpd(null)}
+                className="cursor-pointer bg-white border border-zinc-200 hover:border-zinc-350 text-zinc-700 font-bold text-xs py-2.5 px-4 rounded-xl transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="cursor-pointer bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all shadow-sm shadow-red-100"
+              >
+                Ya, Hapus
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Previews & Print Modal */}
+      {isModalOpen && selectedOpd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm transition-opacity duration-200">
+          <div className="bg-white w-full max-w-sm rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden flex flex-col scale-[1.01] transition-transform">
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
               <span className="text-xs font-bold text-zinc-800 tracking-tight">Stiker QR Laporan</span>
               <button 
@@ -361,24 +647,18 @@ export default function OpdPage() {
               </button>
             </div>
 
-            {/* Modal Content Area */}
             <div className="p-6 flex flex-col items-center justify-center bg-zinc-50/50">
-              
-              {/* STIKER PREVIEW CONTAINER (Gaya Minimalist Putih Bersih) */}
               <div 
                 ref={printAreaRef}
                 className="w-full max-w-[280px] bg-white border border-zinc-200 shadow-sm rounded-2xl p-6 flex flex-col items-center text-center"
               >
-                {/* Header Stiker */}
                 <span className="text-[9px] font-mono font-bold tracking-widest text-zinc-400 uppercase">NOC NETTICK SYSTEM</span>
                 <h4 className="text-xs font-extrabold text-zinc-900 mt-1 max-w-[220px] truncate">
                   {selectedOpd.name}
                 </h4>
                 <p className="text-[9px] text-zinc-400 mt-0.5">{selectedOpd.location}</p>
 
-                {/* QR Code Frame */}
                 <div className="my-5 p-2 bg-white border border-zinc-100 rounded-xl shadow-inner flex items-center justify-center">
-                  {/* API QR Generator Dinamis */}
                   <img 
                     src={getQrUrl(selectedOpd.token)} 
                     alt="QR Code" 
@@ -386,7 +666,6 @@ export default function OpdPage() {
                   />
                 </div>
 
-                {/* Info Barcode / Token di Bawah */}
                 <div className="space-y-1">
                   <span className="text-[9px] font-semibold text-zinc-400 block uppercase tracking-wider">PINDAI UNTUK LAPOR GANGGUAN</span>
                   <div className="font-mono text-xs font-extrabold text-zinc-800 tracking-wider bg-zinc-50 border border-zinc-150 py-1 px-3 rounded-lg inline-block">
@@ -400,7 +679,6 @@ export default function OpdPage() {
               </span>
             </div>
 
-            {/* Modal Footer / Actions */}
             <div className="grid grid-cols-2 gap-2 p-4 border-t border-zinc-100 bg-white">
               <button
                 onClick={handleDownloadQr}
@@ -418,7 +696,93 @@ export default function OpdPage() {
                 Cetak Stiker
               </button>
             </div>
+          </div>
+        </div>
+      )}
 
+      {/* Registrasi Modal */}
+      {isRegModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm transition-opacity duration-200">
+          <div className="bg-white w-full max-w-md rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden flex flex-col scale-[1.01] transition-transform">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-800">
+                  <Building2 className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-xs font-bold text-zinc-800 tracking-tight">Registrasi OPD Baru</span>
+              </div>
+              <button 
+                onClick={() => setIsRegModalOpen(false)}
+                className="cursor-pointer p-1 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-50 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleRegisterSubmit}>
+              <div className="p-5 space-y-4 bg-zinc-50/30">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
+                    Nama Instansi / OPD <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Dinas Sosial (Dinsos)"
+                    value={newOpd.name}
+                    onChange={(e) => setNewOpd({ ...newOpd, name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
+                    Lokasi Penempatan / Ruangan <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Gedung B, Ruang Server Lt. 1"
+                    value={newOpd.location}
+                    onChange={(e) => setNewOpd({ ...newOpd, location: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
+                    Nama PIC / Kepala Instansi (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Bpk. Heru Darmawan"
+                    value={newOpd.head}
+                    onChange={(e) => setNewOpd({ ...newOpd, head: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
+                  />
+                </div>
+
+                <div className="bg-zinc-100/70 p-3 rounded-xl border border-zinc-200/50 text-[10px] text-zinc-500 leading-relaxed">
+                  💡 <strong>Sistem Otomatis:</strong> Token QR pintar unik akan langsung dibentuk secara otomatis oleh sistem saat data ini disimpan agar Anda bisa langsung mencetak stikernya.
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 p-4 border-t border-zinc-100 bg-white">
+                <button
+                  type="button"
+                  onClick={() => setIsRegModalOpen(false)}
+                  className="cursor-pointer bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 font-bold text-xs py-2.5 px-4 rounded-xl transition-all"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all shadow-md"
+                >
+                  Simpan & Daftarkan
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
