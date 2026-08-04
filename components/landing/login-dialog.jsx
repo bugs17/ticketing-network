@@ -1,6 +1,7 @@
 "use client";
 
-import React from 'react'
+import React, { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -8,11 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { ArrowRight, Lock, User } from "lucide-react"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Lock, User, Loader2 } from "lucide-react";
+import { loginAction } from "@/app/actions/auth";
 
 // Kita gunakan { children } agar tombolnya bisa dikirim dinamis dari luar
 const LoginDialog = ({ children }) => {
@@ -23,10 +25,44 @@ const LoginDialog = ({ children }) => {
       </DialogTrigger>
       <LoginFormModal />
     </Dialog>
-  )
-}
+  );
+};
 
 function LoginFormModal() {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  const handleLogin = () => {
+    setErrorMsg("");
+
+    if (!username || !password) {
+      setErrorMsg("Username dan Kata Sandi wajib diisi.");
+      return;
+    }
+
+    startTransition(async () => {
+      // Mengirim objek { username, password } langsung ke Server Action
+      const res = await loginAction({ username, password });
+
+      if (res?.error) {
+        setErrorMsg(res.error);
+      } else if (res?.success) {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    });
+  };
+
+  // Fitur agar user tetap bisa tekan 'Enter' di input untuk submit
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleLogin();
+    }
+  };
+
   return (
     <DialogContent className="sm:max-w-md p-[1px] bg-transparent border-none overflow-hidden rounded-3xl shadow-2xl">
       {/* Efek Border Shine */}
@@ -42,12 +78,27 @@ function LoginFormModal() {
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+        {/* Pesan Error */}
+        {errorMsg && (
+          <div className="mb-4 p-3 text-xs bg-red-50 text-red-600 border border-red-200 rounded-lg">
+            {errorMsg}
+          </div>
+        )}
+
+        {/* Tanpa Tag <form> */}
+        <div className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="username" className="text-xs font-semibold text-zinc-700">Username / NIP</Label>
             <div className="relative">
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-              <Input id="username" placeholder="Masukkan username" className="pl-10 pr-4 py-5 border-zinc-200 rounded-lg bg-zinc-50/50 text-sm focus-visible:ring-emerald-500" />
+              <Input 
+                id="username" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Masukkan username" 
+                className="pl-10 pr-4 py-5 border-zinc-200 rounded-lg bg-zinc-50/50 text-sm focus-visible:ring-emerald-500" 
+              />
             </div>
           </div>
 
@@ -55,17 +106,36 @@ function LoginFormModal() {
             <Label htmlFor="pass" className="text-xs font-semibold text-zinc-700">Kata Sandi</Label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-              <Input id="pass" type="password" placeholder="••••••••" className="pl-10 pr-4 py-5 border-zinc-200 rounded-lg bg-zinc-50/50 text-sm focus-visible:ring-emerald-500" />
+              <Input 
+                id="pass" 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="••••••••" 
+                className="pl-10 pr-4 py-5 border-zinc-200 rounded-lg bg-zinc-50/50 text-sm focus-visible:ring-emerald-500" 
+              />
             </div>
           </div>
 
-          <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-6 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md mt-2 transition-all active:scale-[0.98]">
-            Autentikasi Masuk <ArrowRight className="w-4 h-4" />
+          <Button 
+            type="button" 
+            onClick={handleLogin}
+            disabled={isPending} 
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-6 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md mt-2 transition-all active:scale-[0.98]"
+          >
+            {isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                Autentikasi Masuk <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </Button>
-        </form>
+        </div>
       </div>
     </DialogContent>
-  )
+  );
 }
 
-export default LoginDialog
+export default LoginDialog;
