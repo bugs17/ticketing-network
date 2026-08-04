@@ -20,16 +20,16 @@ import {
 
 // Mock Database internal untuk verifikasi kode barcode
 const OPD_DATABASE = {
-  "DISKES-MLG": { name: "Dinas Kesehatan", address: "Gedung A, Lantai 2, Kota Malang" },
-  "BAPPEDA-MLG": { name: "Bappeda Kota Malang", address: "Gedung Utama, Jl. Merdeka Timur" },
-  "DISKOMINFO-MLG": { name: "Diskominfo Kota Malang", address: "Perkantoran Terpadu, Gedung A" }
+  "DISKES-TMK": { name: "Dinas Kesehatan", address: "Gedung A, Lantai 2, Kota Timika" },
+  "BAPPEDA-TMK": { name: "Bappeda Kabupaten Mimika", address: "Gedung Utama, Jl. Merdeka Timur" },
+  "DISKOMINFO-TMK": { name: "Diskominfo Kota Mimika", address: "Perkantoran Terpadu, Gedung A" }
 };
 
 // DATABASE GABUNGAN: Semua tiket (Aktif maupun Selesai) disimpan di sini
 const ALL_TICKETS_DB = [
   {
     id: "TK-9801",
-    opdCode: "BAPPEDA-MLG",
+    opdCode: "BAPPEDA-TMK",
     issue: "Kabel FO Core 3 putus akibat dahan pohon tumbang",
     status: "on-progress", 
     createdAt: "18 Juli 2026, 14:00",
@@ -39,7 +39,7 @@ const ALL_TICKETS_DB = [
   },
   {
     id: "TK-9544",
-    opdCode: "BAPPEDA-MLG",
+    opdCode: "BAPPEDA-TMK",
     issue: "Koneksi LAN di ruang rapat utama tidak terhubung",
     status: "fixed",
     resolvedAt: "15 Juli 2026, 11:30",
@@ -48,7 +48,7 @@ const ALL_TICKETS_DB = [
   },
   {
     id: "TK-9412",
-    opdCode: "BAPPEDA-MLG",
+    opdCode: "BAPPEDA-TMK",
     issue: "Printer sharing tidak bisa diakses dari komputer administrasi",
     status: "fixed",
     resolvedAt: "10 Juli 2026, 15:45",
