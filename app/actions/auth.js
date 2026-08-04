@@ -36,7 +36,7 @@ export async function loginAction({ username, password }) {
       return { error: "Username atau Kata Sandi salah." };
     }
 
-    // 4. Buat JWT Token (Sertakan id, username, nama, & role ke payload)
+    // 4. Buat JWT Token (Tetap simpan role di dalam token untuk middleware/session)
     const token = await new SignJWT({
       userId: user.id,
       username: user.username,
@@ -57,7 +57,12 @@ export async function loginAction({ username, password }) {
       path: "/",
     });
 
-    return { success: true };
+    // 6. Kembalikan status success dan nilai role ke frontend
+    return { 
+      success: true, 
+      role: user.role 
+      // role: "admin"
+    };
   } catch (error) {
     console.error("Login Error:", error);
     return { error: "Terjadi kesalahan pada server. Coba lagi nanti." };

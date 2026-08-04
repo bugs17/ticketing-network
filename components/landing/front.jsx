@@ -83,16 +83,19 @@ export default function LandingPage() {
             </div>
 
             <div className="pt-2 flex items-center justify-center md:justify-start gap-3">
-                <LoginDialog>
-                    <Button size="lg" className="bg-zinc-950 cursor-pointer hover:bg-zinc-800 text-white px-8 py-6 rounded-xl font-semibold shadow-lg shadow-zinc-300 flex items-center gap-2.5">
-                    Masuk<LogIn className="w-4 h-4 opacity-70" />
-                    </Button>
-                </LoginDialog>
-                <TrackDrawer>
-                    <Button size="lg" variant="outline" className="border-zinc-200 cursor-pointer text-zinc-700 hover:bg-zinc-50 px-8 py-6 rounded-xl font-semibold transition-all active:scale-[0.98]">
-                    Pantau Status Tiket
-                    </Button>
-                </TrackDrawer>
+              {/* PERBAIKAN 1: Gunakan <span> untuk LoginDialog */}
+              <LoginDialog>
+                <span className="bg-zinc-950 cursor-pointer hover:bg-zinc-800 text-white px-8 py-3.5 rounded-xl font-semibold shadow-lg shadow-zinc-300/50 flex items-center gap-2.5 transition-all active:scale-[0.98]">
+                  Masuk <LogIn className="w-4 h-4 opacity-70" />
+                </span>
+              </LoginDialog>
+
+              {/* PERBAIKAN 2: Sesuaikan juga untuk TrackDrawer agar tidak mengalami error yang sama */}
+              <TrackDrawer>
+                <span className="border border-zinc-200 cursor-pointer text-zinc-700 hover:bg-zinc-50 px-8 py-3.5 rounded-xl font-semibold transition-all active:scale-[0.98] inline-flex items-center justify-center">
+                  Pantau Status Tiket
+                </span>
+              </TrackDrawer>
             </div>
             </section>
 

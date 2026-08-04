@@ -9,22 +9,54 @@ export async function middleware(request) {
   const token = request.cookies.get("auth_token")?.value;
   const { pathname } = request.nextUrl;
 
-  // Cek apakah pengguna mencoba membuka rute /dashboard
-  if (pathname.startsWith("/dashboard")) {
-    // 1. Jika tidak ada token, langsung tendang ke "/"
-    if (!token) {
-      return NextResponse.redirect(new URL("/", request.url));
+  async function verifyToken() {
+    if (!token) return null;
+    try {
+      const { payload } = await jwtVerify(token, JWT_SECRET);
+      return payload;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  const user = await verifyToken();
+
+  // 1. JIKA DIAKSES DI HALAMAN UTAMA ("/")
+  if (pathname === "/") {
+    if (user) {
+      if (user.role === "admin") {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+      if (user.role === "teknisi") {
+        return NextResponse.redirect(new URL("/dashboard-teknisi", request.url));
+      }
+    }
+    return NextResponse.next();
+  }
+
+  // 2. JIKA DIAKSES DI RUTE /dashboard (KHUSUS ADMIN)
+  if (pathname.startsWith("/dashboard") && !pathname.startsWith("/dashboard-teknisi")) {
+    if (!user) {
+      const response = NextResponse.redirect(new URL("/", request.url));
+      if (token) response.cookies.delete("auth_token");
+      return response;
     }
 
-    try {
-      // 2. Verifikasi token JWT
-      await jwtVerify(token, JWT_SECRET);
-      return NextResponse.next();
-    } catch (err) {
-      // 3. Jika token kedaluwarsa/invalid, hapus cookie & tendang ke "/"
+    if (user.role === "teknisi") {
+      return NextResponse.redirect(new URL("/dashboard-teknisi", request.url));
+    }
+  }
+
+  // 3. JIKA DIAKSES DI RUTE /dashboard-teknisi (KHUSUS TEKNISI)
+  if (pathname.startsWith("/dashboard-teknisi")) {
+    if (!user) {
       const response = NextResponse.redirect(new URL("/", request.url));
-      response.cookies.delete("auth_token");
+      if (token) response.cookies.delete("auth_token");
       return response;
+    }
+
+    if (user.role === "admin") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
 
@@ -32,5 +64,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/dashboard-teknisi/:path*"],
 };

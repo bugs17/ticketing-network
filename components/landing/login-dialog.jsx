@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from 'react';
+import  { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Dialog,
@@ -44,13 +44,19 @@ function LoginFormModal() {
     }
 
     startTransition(async () => {
-      // Mengirim objek { username, password } langsung ke Server Action
       const res = await loginAction({ username, password });
 
       if (res?.error) {
         setErrorMsg(res.error);
       } else if (res?.success) {
-        router.push("/dashboard");
+        // Cek role untuk menentukan tujuan redirect
+        if (res.role === "ADMIN" || res.role === "admin") {
+          router.push("/dashboard");
+        } else if (res.role === "TEKNISI" || res.role === "teknisi") {
+          router.push("/dashboard-teknisi");
+        } else {
+          router.push("/dashboard"); // Fallback rute bawaan
+        }
         router.refresh();
       }
     });
@@ -64,7 +70,7 @@ function LoginFormModal() {
   };
 
   return (
-    <DialogContent className="sm:max-w-md p-[1px] bg-transparent border-none overflow-hidden rounded-3xl shadow-2xl">
+    <DialogContent className="sm:max-w-md p-[px] bg-transparent border-none overflow-hidden rounded-3xl shadow-2xl">
       {/* Efek Border Shine */}
       <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent_40%,#10b981_70%,transparent_100%)] animate-[spin_4s_linear_infinite] opacity-60" />
       
