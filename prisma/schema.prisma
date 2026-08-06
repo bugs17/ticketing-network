@@ -18,7 +18,7 @@ model User {
   id Int @id @default(autoincrement())
   nama String?
   email String?
-  username String
+  username String @unique
   password String
   role String // ADMIN - TEKNISI
   isActive Boolean @default(true)

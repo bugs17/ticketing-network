@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { getListUser } from "@/app/actions/getListUser";
 import RegisterNewUser from "@/components/dashboard/modal/register-new-user";
+import EditUser from "@/components/dashboard/modal/edit-user";
 
 // Mock Data Awal Pengguna Sistem
 const initialUsersList = [
@@ -401,106 +402,7 @@ export default function UsersPage() {
       <RegisterNewUser isRegModalOpen={isRegModalOpen} setIsRegModalOpen={setIsRegModalOpen} setUsersList={setUsersList} usersList={usersList} />
 
       {/* DIALOG MODAL EDIT USER */}
-      {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm transition-opacity duration-200">
-          <div className="bg-white w-full max-w-md rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden flex flex-col scale-[1.01] transition-transform">
-            
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-800">
-                  <Edit2 className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-xs font-bold text-zinc-800 tracking-tight">Ubah Informasi Pengguna</span>
-              </div>
-              <button 
-                onClick={() => setEditingUser(null)}
-                className="cursor-pointer p-1 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-50 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleEditSubmit}>
-              <div className="p-5 space-y-4 bg-zinc-50/30">
-                
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Nama Lengkap</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingUser.nama}
-                    onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Alamat Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={editingUser.email}
-                    onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Hak Akses / Role</label>
-                    <select
-                      value={editingUser.role}
-                      onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                    >
-                      <option value="Admin Diskominfo">Admin Diskominfo</option>
-                      <option value="Teknisi Lapangan">Teknisi Lapangan</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Status</label>
-                    <select
-                      value={editingUser.status}
-                      onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                    >
-                      <option value="Aktif">Aktif</option>
-                      <option value="Nonaktif">Nonaktif</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Wilayah Tugas / Deskripsi Area</label>
-                  <input
-                    type="text"
-                    value={editingUser.assignedArea}
-                    onChange={(e) => setEditingUser({ ...editingUser, assignedArea: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 p-4 border-t border-zinc-100 bg-white">
-                <button
-                  type="button"
-                  onClick={() => setEditingUser(null)}
-                  className="cursor-pointer bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 font-bold text-xs py-2.5 px-4 rounded-xl transition-all"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all shadow-md"
-                >
-                  Simpan Perubahan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <EditUser editingUser={editingUser} setEditingUser={setEditingUser} setUsersList={setUsersList} usersList={usersList} />
 
       {/* DIALOG MODAL KONFIRMASI HAPUS */}
       {deletingUser && (
