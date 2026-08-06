@@ -18,6 +18,8 @@ import {
   Check,
   ChevronDown
 } from "lucide-react";
+import { getListUser } from "@/app/actions/getListUser";
+import RegisterNewUser from "@/components/dashboard/modal/register-new-user";
 
 // Mock Data Awal Pengguna Sistem
 const initialUsersList = [
@@ -59,8 +61,15 @@ const initialUsersList = [
   }
 ];
 
+
+const roleLabels = {
+  Semua: "Semua",
+  admin: "Admin Diskominfo",
+  teknisi: "Teknisi Lapangan",
+};
+
 export default function UsersPage() {
-  const [usersList, setUsersList] = useState(initialUsersList);
+  const [usersList, setUsersList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState("Semua");
   
@@ -90,12 +99,24 @@ export default function UsersPage() {
     return () => window.removeEventListener("click", handleOutsideClick);
   }, []);
 
+  // getUserListfrombackend
+  useEffect(() => {
+    const getUserFromAction = async () => {
+      const {success, error, data} = await getListUser();
+      if (success) {
+        setUsersList(data)
+      }
+    }
+    getUserFromAction()
+  },[])
+
   // Filter Data Pengguna
   const filteredUsers = usersList.filter(user => {
+    const query = searchQuery.toLowerCase().trim();
+
     const matchesSearch = 
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.id.toLowerCase().includes(searchQuery.toLowerCase());
+      (user.nama?.toLowerCase().includes(query) ?? false) ||
+      (user.email?.toLowerCase().includes(query) ?? false);
     
     const matchesRole = 
       selectedRoleFilter === "Semua" || 
@@ -160,7 +181,7 @@ export default function UsersPage() {
 
   // Helper untuk render badge role
   const getRoleBadge = (role) => {
-    if (role === "Admin Diskominfo") {
+    if (role === "admin") {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-zinc-950 text-white border border-zinc-900">
           <Shield className="w-3 h-3" />
@@ -171,14 +192,14 @@ export default function UsersPage() {
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-zinc-100 text-zinc-800 border border-zinc-200">
         <Wrench className="w-3 h-3" />
-        Teknisi Lapangan
+        Teknisi
       </span>
     );
   };
 
   // Helper untuk render status
   const getStatusBadge = (status) => {
-    if (status === "Aktif") {
+    if (status) {
       return (
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -188,7 +209,7 @@ export default function UsersPage() {
     }
     return (
       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-400">
-        <span className="w-1.5 h-1.5 rounded-full bg-zinc-300" />
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
         Nonaktif
       </span>
     );
@@ -219,27 +240,27 @@ export default function UsersPage() {
         
         {/* Filter Role (Apple-style segment control) */}
         <div className="flex bg-zinc-100 p-1 rounded-xl self-stretch md:self-auto">
-          {["Semua", "Admin Diskominfo", "Teknisi Lapangan"].map((role) => (
-            <button
-              key={role}
-              onClick={() => setSelectedRoleFilter(role)}
-              className={`cursor-pointer px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                selectedRoleFilter === role 
-                  ? "bg-white text-zinc-950 shadow-sm" 
-                  : "text-zinc-500 hover:text-zinc-950"
-              }`}
-            >
-              {role}
-            </button>
-          ))}
-        </div>
+        {["Semua", "admin", "teknisi"].map((role) => (
+          <button
+            key={role}
+            onClick={() => setSelectedRoleFilter(role)}
+            className={`cursor-pointer px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              selectedRoleFilter === role 
+                ? "bg-white text-zinc-950 shadow-sm" 
+                : "text-zinc-500 hover:text-zinc-950"
+            }`}
+          >
+            {roleLabels[role] || role}
+          </button>
+        ))}
+      </div>
 
         {/* Input Pencarian */}
         <div className="relative w-full md:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
           <input 
             type="text" 
-            placeholder="Cari nama, email, atau ID pengguna..." 
+            placeholder="Cari nama atau email pengguna.." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-zinc-50/50 border border-zinc-150 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors"
@@ -256,7 +277,6 @@ export default function UsersPage() {
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider font-mono">ID USER</th>
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">PENGGUNA</th>
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">HAK AKSES / ROLE</th>
-                <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">WILAYAH TUGAS</th>
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">STATUS AKSES</th>
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-right">AKSI</th>
               </tr>
@@ -276,15 +296,15 @@ export default function UsersPage() {
                     className="hover:bg-zinc-50/30 transition-colors group select-none cursor-default"
                   >
                     <td className="p-4 whitespace-nowrap">
-                      <span className="text-xs font-mono font-bold text-zinc-500">{user.id}</span>
+                      <span className="text-xs font-mono font-bold text-zinc-500">{user.role === "teknisi" ? "TK-" : user.role === "admin" ? "AD-" : ""}{user.id}</span>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-zinc-50 border border-zinc-150 flex items-center justify-center text-zinc-600 shrink-0 font-bold text-xs uppercase">
-                          {user.name.charAt(0)}
+                          {user.nama.charAt(0)}
                         </div>
                         <div className="leading-tight">
-                          <span className="text-xs font-bold text-zinc-900 block">{user.name}</span>
+                          <span className="text-xs font-bold text-zinc-900 block">{user.nama}</span>
                           <span className="text-[10px] text-zinc-400 block mt-0.5">{user.email}</span>
                         </div>
                       </div>
@@ -293,10 +313,7 @@ export default function UsersPage() {
                       {getRoleBadge(user.role)}
                     </td>
                     <td className="p-4 whitespace-nowrap">
-                      <span className="text-xs font-medium text-zinc-600">{user.assignedArea}</span>
-                    </td>
-                    <td className="p-4 whitespace-nowrap">
-                      {getStatusBadge(user.status)}
+                      {getStatusBadge(user.isActive)}
                     </td>
                     <td className="p-4 whitespace-nowrap text-right">
                       <div className="relative inline-block text-left">
@@ -381,113 +398,7 @@ export default function UsersPage() {
       )}
 
       {/* DIALOG MODAL REGISTRASI USER BARU */}
-      {isRegModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm transition-opacity duration-200">
-          <div className="bg-white w-full max-w-md rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden flex flex-col scale-[1.01] transition-transform">
-            
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-800">
-                  <Users className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-xs font-bold text-zinc-800 tracking-tight">Daftarkan Pengguna Baru</span>
-              </div>
-              <button 
-                onClick={() => setIsRegModalOpen(false)}
-                className="cursor-pointer p-1 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-50 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleRegisterSubmit}>
-              <div className="p-5 space-y-4 bg-zinc-50/30">
-                
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Nama Lengkap</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Hermawan Wijaya"
-                    value={newUser.name}
-                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Alamat Email</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="Contoh: hermawan@gov.id"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Hak Akses / Role</label>
-                    <select
-                      value={newUser.role}
-                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                    >
-                      <option value="Admin Diskominfo">Admin Diskominfo</option>
-                      <option value="Teknisi Lapangan">Teknisi Lapangan</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Status Awal</label>
-                    <select
-                      value={newUser.status}
-                      onChange={(e) => setNewUser({ ...newUser, status: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                    >
-                      <option value="Aktif">Aktif</option>
-                      <option value="Nonaktif">Nonaktif</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Wilayah Tugas / Deskripsi Area</label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: Wilayah Tengah & Timur atau Gedung A-D"
-                    value={newUser.assignedArea}
-                    onChange={(e) => setNewUser({ ...newUser, assignedArea: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="bg-zinc-100/70 p-3 rounded-xl border border-zinc-200/50 text-[10px] text-zinc-500 leading-relaxed">
-                  🔐 Password default sementara akan dibuatkan otomatis dan wajib diganti oleh pengguna saat pertama kali masuk ke dasbor.
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 p-4 border-t border-zinc-100 bg-white">
-                <button
-                  type="button"
-                  onClick={() => setIsRegModalOpen(false)}
-                  className="cursor-pointer bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 font-bold text-xs py-2.5 px-4 rounded-xl transition-all"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all shadow-md"
-                >
-                  Daftarkan User
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <RegisterNewUser isRegModalOpen={isRegModalOpen} setIsRegModalOpen={setIsRegModalOpen} setUsersList={setUsersList} usersList={usersList} />
 
       {/* DIALOG MODAL EDIT USER */}
       {editingUser && (
@@ -517,7 +428,7 @@ export default function UsersPage() {
                   <input
                     type="text"
                     required
-                    value={editingUser.name}
+                    value={editingUser.nama}
                     onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
                   />
@@ -603,7 +514,7 @@ export default function UsersPage() {
               <div className="space-y-1">
                 <h3 className="text-sm font-bold text-zinc-900">Hapus Akses Pengguna?</h3>
                 <p className="text-xs text-zinc-500 leading-relaxed">
-                  Tindakan ini akan menolak akses masuk bagi <strong>{deletingUser.name}</strong> ke sistem secara permanen. Riwayat tugas atau tiket yang terselesaikan akan tetap disimpan untuk audit keamanan.
+                  Tindakan ini akan menolak akses masuk bagi <strong>{deletingUser.nama}</strong> ke sistem secara permanen. Riwayat tugas atau tiket yang terselesaikan akan tetap disimpan untuk audit keamanan.
                 </p>
               </div>
             </div>
