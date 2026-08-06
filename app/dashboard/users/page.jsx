@@ -21,6 +21,7 @@ import {
 import { getListUser } from "@/app/actions/getListUser";
 import RegisterNewUser from "@/components/dashboard/modal/register-new-user";
 import EditUser from "@/components/dashboard/modal/edit-user";
+import KonfirmasiDeleteUser from "@/components/dashboard/modal/konfirmasi-delete-user";
 
 // Mock Data Awal Pengguna Sistem
 const initialUsersList = [
@@ -405,40 +406,7 @@ export default function UsersPage() {
       <EditUser editingUser={editingUser} setEditingUser={setEditingUser} setUsersList={setUsersList} usersList={usersList} />
 
       {/* DIALOG MODAL KONFIRMASI HAPUS */}
-      {deletingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm transition-opacity duration-200">
-          <div className="bg-white w-full max-w-sm rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden flex flex-col scale-[1.01] transition-transform">
-            
-            <div className="p-6 text-center space-y-4">
-              <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto">
-                <Trash2 className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-sm font-bold text-zinc-900">Hapus Akses Pengguna?</h3>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Tindakan ini akan menolak akses masuk bagi <strong>{deletingUser.nama}</strong> ke sistem secara permanen. Riwayat tugas atau tiket yang terselesaikan akan tetap disimpan untuk audit keamanan.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 p-4 border-t border-zinc-100 bg-zinc-50/50">
-              <button
-                onClick={() => setDeletingUser(null)}
-                className="cursor-pointer bg-white border border-zinc-200 hover:border-zinc-350 text-zinc-700 font-bold text-xs py-2.5 px-4 rounded-xl transition-all"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                className="cursor-pointer bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all shadow-sm"
-              >
-                Ya, Hapus
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      <KonfirmasiDeleteUser deletingUser={deletingUser} setDeletingUser={setDeletingUser} setUsersList={setUsersList} usersList={usersList} />
 
     </div>
   );
