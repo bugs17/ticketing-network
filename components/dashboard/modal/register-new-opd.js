@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import { Building2, X, Loader2, AlertCircle } from "lucide-react";
+import { creareNewOpd } from "@/app/actions/create-new-opd";
 // import { createNewOpd } from "@/app/actions/create-new-opd";
 
 const generateToken = (name) => {
@@ -21,7 +22,8 @@ const ModalAddNewOpd = ({ isRegModalOpen, setIsRegModalOpen, opdList, setOpdList
   const initialFormState = {
     nama: "",
     nama_pic: "",
-    no_hp_pic: "",
+    kontak_pic: "",
+    prioritas: "medium",
   };
 
   const [newOpd, setNewOpd] = useState(initialFormState);
@@ -36,28 +38,29 @@ const ModalAddNewOpd = ({ isRegModalOpen, setIsRegModalOpen, opdList, setOpdList
     }
 
     startTransition(async () => {
-      // Inject token_qr yang dihasilkan dari nama OPD saat submit
+      // Inject token_qr ke payload yang siap dikirim ke backend
       const payload = {
         ...newOpd,
         token_qr: generateToken(newOpd.nama),
       };
 
-      // Panggil Server Action dengan payload yang sudah ada token_qr
-    //   const res = await createNewOpd(payload);
+      console.log("Payload siap dikirim ke Server Action:", payload);
 
-    //   if (!res?.success) {
-    //     setErrorMsg(res?.error || "Gagal mendaftarkan OPD baru.");
-    //     return;
-    //   }
+      // Panggil Server Action
+      const {data,error,success} = await creareNewOpd(payload);
 
-    //   // Update state list OPD secara realtime
-    //   if (setOpdList && res.data) {
-    //     setOpdList((prev) => [res.data, ...prev]);
-    //   }
+      if (!success) {
+        setErrorMsg(error || "Gagal mendaftarkan OPD baru.");
+        return;
+      }
 
-    //   // Reset form & tutup modal
-    //   setNewOpd(initialFormState);
-    //   setIsRegModalOpen(false);
+      if (setOpdList && data) {
+        setOpdList((prev) => [data, ...prev]);
+      }
+
+      // Reset form & tutup modal
+      setNewOpd(initialFormState);
+      setIsRegModalOpen(false);
     });
   };
 
@@ -130,10 +133,33 @@ const ModalAddNewOpd = ({ isRegModalOpen, setIsRegModalOpen, opdList, setOpdList
               <input
                 type="text"
                 placeholder="081234567890"
-                value={newOpd.no_hp_pic}
-                onChange={(e) => setNewOpd({ ...newOpd, no_hp_pic: e.target.value })}
+                value={newOpd.kontak_pic}
+                onChange={(e) => setNewOpd({ ...newOpd, kontak_pic: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
               />
+            </div>
+          </div>
+
+          {/* Urgensi / Prioritas */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
+              Urgensi Tiket
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {["low", "medium", "high"].map((lvl) => (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => setNewOpd({ ...newOpd, prioritas: lvl })}
+                  className={`py-2 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                    newOpd.prioritas === lvl
+                      ? "bg-zinc-950 border-zinc-950 text-white shadow-sm"
+                      : "bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+                  }`}
+                >
+                  {lvl.toUpperCase()}
+                </button>
+              ))}
             </div>
           </div>
 
