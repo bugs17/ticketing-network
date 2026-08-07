@@ -17,6 +17,7 @@ import {
   Trash2,
   AlertCircle
 } from "lucide-react";
+import ModalAddNewOpd from "@/components/dashboard/modal/register-new-opd";
 
 const initialOpdList = [
   {
@@ -348,7 +349,6 @@ export default function OpdPage() {
               <tr className="border-b border-zinc-100 bg-zinc-50/50">
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider font-mono">ID OPD</th>
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">NAMA INSTANSI ORGANISASI</th>
-                <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">LOKASI / RUANGAN</th>
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider font-mono">TOKEN KODE QR</th>
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-center">TOTAL ADUAN</th>
                 <th className="p-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wider text-right">AKSI / CETAK</th>
@@ -381,9 +381,6 @@ export default function OpdPage() {
                           <span className="text-[10px] text-zinc-400 block mt-0.5">PIC: {opd.head}</span>
                         </div>
                       </div>
-                    </td>
-                    <td className="p-4 whitespace-nowrap">
-                      <span className="text-xs font-medium text-zinc-600">{opd.location}</span>
                     </td>
                     <td className="p-4 whitespace-nowrap font-mono text-[11px]">
                       <div className="flex items-center gap-2">
@@ -701,91 +698,7 @@ export default function OpdPage() {
       )}
 
       {/* Registrasi Modal */}
-      {isRegModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm transition-opacity duration-200">
-          <div className="bg-white w-full max-w-md rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden flex flex-col scale-[1.01] transition-transform">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-800">
-                  <Building2 className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-xs font-bold text-zinc-800 tracking-tight">Registrasi OPD Baru</span>
-              </div>
-              <button 
-                onClick={() => setIsRegModalOpen(false)}
-                className="cursor-pointer p-1 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-50 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleRegisterSubmit}>
-              <div className="p-5 space-y-4 bg-zinc-50/30">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
-                    Nama Instansi / OPD <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Dinas Sosial (Dinsos)"
-                    value={newOpd.name}
-                    onChange={(e) => setNewOpd({ ...newOpd, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
-                    Lokasi Penempatan / Ruangan <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Gedung B, Ruang Server Lt. 1"
-                    value={newOpd.location}
-                    onChange={(e) => setNewOpd({ ...newOpd, location: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
-                    Nama PIC / Kepala Instansi (Opsional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: Bpk. Heru Darmawan"
-                    value={newOpd.head}
-                    onChange={(e) => setNewOpd({ ...newOpd, head: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="bg-zinc-100/70 p-3 rounded-xl border border-zinc-200/50 text-[10px] text-zinc-500 leading-relaxed">
-                  💡 <strong>Sistem Otomatis:</strong> Token QR pintar unik akan langsung dibentuk secara otomatis oleh sistem saat data ini disimpan agar Anda bisa langsung mencetak stikernya.
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 p-4 border-t border-zinc-100 bg-white">
-                <button
-                  type="button"
-                  onClick={() => setIsRegModalOpen(false)}
-                  className="cursor-pointer bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 font-bold text-xs py-2.5 px-4 rounded-xl transition-all"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all shadow-md"
-                >
-                  Simpan & Daftarkan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ModalAddNewOpd isRegModalOpen={isRegModalOpen} opdList={opdList} setOpdList={setOpdList} setIsRegModalOpen={setIsRegModalOpen}  />
 
     </div>
   );
