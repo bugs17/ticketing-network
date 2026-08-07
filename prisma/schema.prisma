@@ -43,7 +43,12 @@ model Opd {
 
 model Ticket {
   id Int @id @default(autoincrement())
-  status String? // menunggu - proses - selesai
+  status String @default("menunggu") // menunggu - proses - selesai
+
+  deskripsi_masalah String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   opdId     Int
   opd       Opd      @relation(fields: [opdId], references: [id], onDelete: Cascade)

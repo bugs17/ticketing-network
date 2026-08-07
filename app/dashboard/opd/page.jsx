@@ -71,7 +71,8 @@ export default function OpdPage() {
   );
 
   const handleCopyLink = (token) => {
-    const generatedUrl = `https://nettick.gov/report?client=${token}`;
+    const baseurl = process.env.NEXT_PUBLIC_APP_URL
+    const generatedUrl = `${baseurl}/report?client=${token}`;
     navigator.clipboard.writeText(generatedUrl);
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), 2000);

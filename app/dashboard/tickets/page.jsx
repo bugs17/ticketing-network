@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   TicketPlus, 
   Trash2, 
@@ -21,6 +21,9 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import CreateTicketManual from "@/components/dashboard/modal/create-ticket-manual";
+import { listOpd } from "@/app/actions/get-list-opd";
+import { listTicket } from "@/app/actions/get-list-ticket";
 
 // Mock Data Awal Tiket
 const initialTickets = [
@@ -55,13 +58,14 @@ const initialTickets = [
 
 export default function TicketsPage() {
   const [tickets, setTickets] = useState(initialTickets);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isModalTicketOpen, setIsModalTicketOpen] = useState(false);
   
   // State untuk form tiket baru
   const [newOpd, setNewOpd] = useState("");
   const [newIssue, setNewIssue] = useState("");
   const [newPriority, setNewPriority] = useState("MEDIUM");
   const [newPhone, setNewPhone] = useState("");
+  const [opdList, setOpdList] = useState([]);
 
 
     // State Pencarian dan Filter baru
@@ -70,30 +74,30 @@ export default function TicketsPage() {
     const [filterMonth, setFilterMonth] = useState("ALL");
     const [filterYear, setFilterYear] = useState("ALL");
 
-  // Handler: Tambah Tiket Baru (Manual Input via Telepon)
-  const handleCreateTicket = (e) => {
-    e.preventDefault();
-    if (!newOpd || !newIssue) return;
 
-    const newTicket = {
-      id: `TCK-${Math.floor(1000 + Math.random() * 9000)}`,
-      opd: newOpd,
-      issue: newIssue,
-      status: "Menunggu",
-      time: "Baru saja",
-      priority: newPriority,
-      phone: newPhone || "Via Telepon"
-    };
+    // get list opd untuk di tampilkan di modal create ticket manual
+    useEffect(() => {
+      const getOpdList = async () => {
+        const {data, error, success} = await listOpd() ;
+        if (success) {
+          setOpdList(data)
+        }
+      };
 
-    setTickets([newTicket, ...tickets]);
-    
-    // Reset Form & Close Dialog
-    setNewOpd("");
-    setNewIssue("");
-    setNewPriority("MEDIUM");
-    setNewPhone("");
-    setIsDialogOpen(false);
-  };
+      getOpdList()
+    },[])
+
+    // get list ticket
+    useEffect(() => {
+      const getListTicket = async () => {
+          const {data, error, success} = await listTicket()
+          if (success) {
+            setTickets(data)
+          }
+      }
+      getListTicket()
+    },[])
+
 
   // Handler: Kirim Teknisi (Ubah status Menunggu -> Proses)
   const handleDispatchTech = (id) => {
@@ -114,42 +118,42 @@ export default function TicketsPage() {
 
 
   // Logika filter gabungan (Search + Status + Bulan + Tahun)
-const filteredTickets = tickets.filter((ticket) => {
-  // 1. Filter Pencarian Teks (Case Insensitive)
-  const matchesSearch = 
-    ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ticket.opd.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ticket.issue.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredTickets = tickets.filter((ticket) => {
+    // 1. Filter Pencarian Teks (Case Insensitive)
+    const matchesSearch = 
+      ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ticket.opd.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ticket.deskripsi_masalah.toLowerCase().includes(searchQuery.toLowerCase());
 
-  // 2. Filter Status
-  const matchesStatus = filterStatus === "ALL" || ticket.status === filterStatus;
+    // 2. Filter Status
+    const matchesStatus = filterStatus === "ALL" || ticket.status === filterStatus;
 
-  // Memecah format waktu "15 Jul 2026, 14:20" atau mendeteksi "Baru saja"
-  // Format bulan dipetakan untuk pencocokan filter
-  const monthMap = {
-    Jan: "01", Feb: "02", Mar: "03", Apr: "04", Mei: "05", Jun: "06",
-    Jul: "07", Agu: "08", Sep: "09", Okt: "10", Nov: "11", Des: "12"
-  };
+    // Memecah format waktu "15 Jul 2026, 14:20" atau mendeteksi "Baru saja"
+    // Format bulan dipetakan untuk pencocokan filter
+    const monthMap = {
+      Jan: "01", Feb: "02", Mar: "03", Apr: "04", Mei: "05", Jun: "06",
+      Jul: "07", Agu: "08", Sep: "09", Okt: "10", Nov: "11", Des: "12"
+    };
 
-  let ticketMonth = "ALL";
-  let ticketYear = "ALL";
+    let ticketMonth = "ALL";
+    let ticketYear = "ALL";
 
-  // Ekstrak bulan dan tahun jika format tanggal cocok ("DD Mmm YYYY, HH:MM")
-  const dateParts = ticket.time.split(" ");
-  if (dateParts.length >= 3) {
-    const rawMonth = dateParts[1]; // contoh: "Jul"
-    ticketMonth = monthMap[rawMonth] || "ALL";
-    ticketYear = dateParts[2].replace(",", ""); // contoh: "2026"
-  }
+    // Ekstrak bulan dan tahun jika format tanggal cocok ("DD Mmm YYYY, HH:MM")
+    const dateParts = ticket.time.split(" ");
+    if (dateParts.length >= 3) {
+      const rawMonth = dateParts[1]; // contoh: "Jul"
+      ticketMonth = monthMap[rawMonth] || "ALL";
+      ticketYear = dateParts[2].replace(",", ""); // contoh: "2026"
+    }
 
-  // 3. Filter Bulan
-  const matchesMonth = filterMonth === "ALL" || ticketMonth === filterMonth || ticket.time === "Baru saja";
+    // 3. Filter Bulan
+    const matchesMonth = filterMonth === "ALL" || ticketMonth === filterMonth || ticket.time === "Baru saja";
 
-  // 4. Filter Tahun
-  const matchesYear = filterYear === "ALL" || ticketYear === filterYear || ticket.time === "Baru saja";
+    // 4. Filter Tahun
+    const matchesYear = filterYear === "ALL" || ticketYear === filterYear || ticket.time === "Baru saja";
 
-  return matchesSearch && matchesStatus && matchesMonth && matchesYear;
-});
+    return matchesSearch && matchesStatus && matchesMonth && matchesYear;
+  });
 
   return (
     <div className="space-y-6">
@@ -163,133 +167,46 @@ const filteredTickets = tickets.filter((ticket) => {
           </p>
         </div>
 
+        <button 
+          onClick={() => setIsModalTicketOpen(true)}
+          className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-zinc-200 active:scale-[0.98] self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4" />
+          Buat Tiket Manual
+        </button>
+
         {/* DIALOG MODAL TAMBAH TIKET */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <button className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-zinc-200 active:scale-[0.98] self-start sm:self-auto">
-              <Plus className="w-4 h-4" />
-              Buat Tiket Manual
-            </button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[480px] rounded-2xl bg-white border border-zinc-150 p-6">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-bold text-zinc-950 tracking-tight flex items-center gap-2">
-                <PhoneCall className="w-5 h-5 text-zinc-500" />
-                Buat Tiket Gangguan Manual
-              </DialogTitle>
-              <DialogDescription className="text-xs text-zinc-400">
-                Gunakan form ini jika instansi menghubungi via telepon atau tatap muka langsung.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleCreateTicket} className="space-y-4 mt-4">
-              {/* Input OPD */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">OPD Pelapor</label>
-                <input 
-                  type="text" 
-                  placeholder="Contoh: BPKAD Timika"
-                  required
-                  value={newOpd}
-                  onChange={(e) => setNewOpd(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:border-zinc-950 transition-colors"
-                />
-              </div>
-
-              {/* Kontak Telepon */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Kontak / No. Telepon (Opsional)</label>
-                <input 
-                  type="text" 
-                  placeholder="Contoh: 0812-xxxx-xxxx"
-                  value={newPhone}
-                  onChange={(e) => setNewPhone(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:border-zinc-950 transition-colors"
-                />
-              </div>
-
-              {/* Grid Input: Priority */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Urgensi Tiket</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {["LOW", "MEDIUM", "HIGH"].map((lvl) => (
-                    <button
-                      key={lvl}
-                      type="button"
-                      onClick={() => setNewPriority(lvl)}
-                      className={`py-2 rounded-lg text-xs font-bold border transition-all ${
-                        newPriority === lvl 
-                          ? "bg-zinc-950 border-zinc-950 text-white" 
-                          : "bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50"
-                      }`}
-                    >
-                      {lvl}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Deskripsi Masalah */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">Deskripsi Gangguan</label>
-                <textarea 
-                  rows={3}
-                  placeholder="Tulis detail masalah jaringan atau sistem yang dilaporkan secara spesifik..."
-                  required
-                  value={newIssue}
-                  onChange={(e) => setNewIssue(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:border-zinc-950 transition-colors resize-none"
-                />
-              </div>
-
-              <DialogFooter className="pt-4 flex items-center justify-end gap-2 border-t border-zinc-100">
-                <button 
-                  type="button" 
-                  onClick={() => setIsDialogOpen(false)}
-                  className="px-4 py-2.5 border border-zinc-200 hover:bg-zinc-50 text-xs font-bold rounded-xl text-zinc-600"
-                >
-                  Batal
-                </button>
-                <button 
-                  type="submit"
-                  className="px-4 py-2.5 bg-zinc-950 hover:bg-zinc-900 text-white text-xs font-bold rounded-xl shadow-sm"
-                >
-                  Buat Tiket
-                </button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        
       </div>
 
       {/* 2. FILTER & SEARCH BAR */}
 <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm">
   
-  {/* Input Pencarian (6/12 width di layar lebar) */}
-  <div className="relative lg:col-span-6 w-full">
-    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-    <input 
-      type="text" 
-      placeholder="Cari berdasarkan ID tiket, nama OPD, atau masalah..." 
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      className="w-full pl-9 pr-4 py-2.5 bg-zinc-50/50 border border-zinc-150 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors"
-    />
-  </div>
+    {/* Input Pencarian (6/12 width di layar lebar) */}
+    <div className="relative lg:col-span-6 w-full">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+      <input 
+        type="text" 
+        placeholder="Cari berdasarkan ID tiket, nama OPD, atau masalah..." 
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full pl-9 pr-4 py-2.5 bg-zinc-50/50 border border-zinc-150 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors"
+      />
+    </div>
 
-  {/* Filter Status (2/12 width) */}
-  <div className="lg:col-span-2 w-full">
-    <select
-      value={filterStatus}
-      onChange={(e) => setFilterStatus(e.target.value)}
-      className="w-full px-3 py-2.5 bg-zinc-50/50 border border-zinc-150 rounded-xl text-xs text-zinc-700 font-medium focus:outline-none focus:border-zinc-950 transition-colors cursor-pointer appearance-none"
-    >
-      <option value="ALL">Semua Status</option>
-      <option value="Menunggu">Menunggu</option>
-      <option value="Proses">Proses</option>
-      <option value="Selesai">Selesai</option>
-    </select>
-  </div>
+    {/* Filter Status (2/12 width) */}
+    <div className="lg:col-span-2 w-full">
+      <select
+        value={filterStatus}
+        onChange={(e) => setFilterStatus(e.target.value)}
+        className="w-full px-3 py-2.5 bg-zinc-50/50 border border-zinc-150 rounded-xl text-xs text-zinc-700 font-medium focus:outline-none focus:border-zinc-950 transition-colors cursor-pointer appearance-none"
+      >
+        <option value="ALL">Semua Status</option>
+        <option value="Menunggu">Menunggu</option>
+        <option value="Proses">Proses</option>
+        <option value="Selesai">Selesai</option>
+      </select>
+    </div>
 
     {/* Filter Bulan (2/12 width) */}
     <div className="lg:col-span-2 w-full">
@@ -356,36 +273,36 @@ const filteredTickets = tickets.filter((ticket) => {
                     {/* ID Tiket */}
                     <td className="p-4 whitespace-nowrap">
                       <span className="text-xs font-mono font-bold text-zinc-800 bg-zinc-100 px-2 py-1 rounded-md">
-                        {ticket.id}
+                        {"TCK-"}{ticket.id}
                       </span>
                     </td>
 
                     {/* OPD */}
                     <td className="p-4">
                       <div className="leading-tight">
-                        <span className="text-xs font-bold text-zinc-900 block">{ticket.opd}</span>
-                        <span className="text-[10px] text-zinc-400 font-mono block mt-0.5">{ticket.time}</span>
+                        <span className="text-xs font-bold text-zinc-900 block">{ticket.opd.nama}</span>
+                        <span className="text-[10px] text-zinc-400 font-mono block mt-0.5">{ticket.createdAt}</span>
                       </div>
                     </td>
 
                     {/* Deskripsi */}
                     <td className="p-4 max-w-[280px]">
-                      <p className="text-xs font-medium text-zinc-600 line-clamp-2" title={ticket.issue}>
-                        {ticket.issue}
+                      <p className="text-xs font-medium text-zinc-600 line-clamp-2" title={ticket.deskripsi_masalah}>
+                        {ticket.deskripsi_masalah}
                       </p>
-                      <span className="text-[9px] text-zinc-400 block mt-1">Kontak: {ticket.phone}</span>
+                      <span className="text-[9px] text-zinc-400 block mt-1">Kontak: {ticket.opd.kontak_pic}</span>
                     </td>
 
                     {/* Prioritas */}
                     <td className="p-4 whitespace-nowrap">
                       <span className={`text-[9px] font-extrabold tracking-wider px-2 py-0.5 rounded-md ${
-                        ticket.priority === "HIGH" 
+                        ticket.prioritas === "HIGH" 
                           ? "bg-red-50 text-red-700 border border-red-100" 
-                          : ticket.priority === "MEDIUM" 
+                          : ticket.prioritas === "MEDIUM" 
                           ? "bg-amber-50 text-amber-700 border border-amber-100" 
                           : "bg-zinc-100 text-zinc-600"
                       }`}>
-                        {ticket.priority}
+                        {ticket.prioritas}
                       </span>
                     </td>
 
@@ -497,6 +414,8 @@ const filteredTickets = tickets.filter((ticket) => {
         </div>
         </div>
       </div>
+
+      <CreateTicketManual isModalTicketOpen={isModalTicketOpen} setIsModalTicketOpen={setIsModalTicketOpen} opdList={opdList} />
 
     </div>
   );
