@@ -18,44 +18,12 @@ import {
   AlertCircle
 } from "lucide-react";
 import ModalAddNewOpd from "@/components/dashboard/modal/register-new-opd";
+import { listOpd } from "@/app/actions/get-list-opd";
+import PreviewDanPrintQR from "@/components/dashboard/modal/preview-dan-print-qr";
 
-const initialOpdList = [
-  {
-    id: "OPD-001",
-    name: "Dinas Kesehatan (Dinkes)",
-    head: "Dr. adm. Kesehatan",
-    token: "dinkes-noc-token-9281",
-    totalTickets: 12,
-    location: "Gedung A, Lt. 2"
-  },
-  {
-    id: "OPD-002",
-    name: "Diskominfo",
-    head: "Bpk. Kepala Kominfo",
-    token: "diskominfo-noc-token-1102",
-    totalTickets: 8,
-    location: "Gedung Utama, Lt. 3"
-  },
-  {
-    id: "OPD-003",
-    name: "Bappeda",
-    head: "Ibu Kepala Bappeda",
-    token: "bappeda-noc-token-4412",
-    totalTickets: 5,
-    location: "Gedung B, Lt. 1"
-  },
-  {
-    id: "OPD-004",
-    name: "Dinas Pendidikan (Disdik)",
-    head: "Bpk. Kepala Pendidikan",
-    token: "disdik-noc-token-7721",
-    totalTickets: 3,
-    location: "Gedung C, Lt. 2"
-  }
-];
 
 export default function OpdPage() {
-  const [opdList, setOpdList] = useState(initialOpdList);
+  const [opdList, setOpdList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedToken, setCopiedToken] = useState(null);
   
@@ -66,7 +34,6 @@ export default function OpdPage() {
 
   // State Registrasi
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
-  const [newOpd, setNewOpd] = useState({ name: "", head: "", location: "" });
 
   // State Edit & Hapus
   const [editingOpd, setEditingOpd] = useState(null); 
@@ -86,9 +53,19 @@ export default function OpdPage() {
     return () => window.removeEventListener("click", handleOutsideClick);
   }, []);
 
+  useEffect(() => {
+    const getListOpd = async () => {
+      const {data,error, success} = await listOpd()
+      if (success) {
+        setOpdList(data)
+      }
+    }
+    getListOpd()
+  },[])
+
   const filteredOpd = opdList.filter(opd => 
-    opd.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    opd.id.toLowerCase().includes(searchQuery.toLowerCase())
+    opd.nama.toLowerCase().includes(searchQuery.toLowerCase())
+    // opd.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleCopyLink = (token) => {
@@ -109,29 +86,6 @@ export default function OpdPage() {
     return `${cleanName}-noc-token-${randomNum}`;
   };
 
-  // Registrasi Baru
-  const handleRegisterSubmit = (e) => {
-    e.preventDefault();
-    if (!newOpd.name || !newOpd.location) return;
-
-    const nextIdNum = opdList.length > 0 
-      ? Math.max(...opdList.map(o => parseInt(o.id.replace("OPD-", "")))) + 1 
-      : 1;
-    const generatedId = `OPD-${String(nextIdNum).padStart(3, '0')}`;
-    
-    const newOpdData = {
-      id: generatedId,
-      name: newOpd.name,
-      head: newOpd.head || "Belum ditentukan",
-      token: generateToken(newOpd.name),
-      totalTickets: 0,
-      location: newOpd.location
-    };
-
-    setOpdList([newOpdData, ...opdList]);
-    setIsRegModalOpen(false);
-    setNewOpd({ name: "", head: "", location: "" });
-  };
 
   // Edit Submit
   const handleEditSubmit = (e) => {
@@ -369,7 +323,7 @@ export default function OpdPage() {
                     className="hover:bg-zinc-50/30 transition-colors group select-none cursor-default"
                   >
                     <td className="p-4 whitespace-nowrap">
-                      <span className="text-xs font-mono font-bold text-zinc-500">{opd.id}</span>
+                      <span className="text-xs font-mono font-bold text-zinc-500">{"OPD-"}{opd.id}</span>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -377,25 +331,25 @@ export default function OpdPage() {
                           <Building2 className="w-4 h-4" />
                         </div>
                         <div className="leading-tight">
-                          <span className="text-xs font-bold text-zinc-900 block">{opd.name}</span>
-                          <span className="text-[10px] text-zinc-400 block mt-0.5">PIC: {opd.head}</span>
+                          <span className="text-xs font-bold text-zinc-900 block">{opd.nama}</span>
+                          <span className="text-[10px] text-zinc-400 block mt-0.5">PIC: {opd.nama_pic}</span>
                         </div>
                       </div>
                     </td>
                     <td className="p-4 whitespace-nowrap font-mono text-[11px]">
                       <div className="flex items-center gap-2">
                         <span className="bg-zinc-50 border border-zinc-200 text-zinc-700 px-2 py-0.5 rounded-md font-bold">
-                          {opd.token}
+                          {opd.token_qr}
                         </span>
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleCopyLink(opd.token);
+                            handleCopyLink(opd.token_qr);
                           }}
                           className="p-1 text-zinc-400 hover:text-zinc-950 rounded transition-colors cursor-pointer"
                           title="Salin Tautan Pelaporan Smart"
                         >
-                          {copiedToken === opd.token ? (
+                          {copiedToken === opd.token_qr ? (
                             <Check className="w-3.5 h-3.5 text-emerald-600" />
                           ) : (
                             <Copy className="w-3.5 h-3.5" />
@@ -405,7 +359,7 @@ export default function OpdPage() {
                     </td>
                     <td className="p-4 whitespace-nowrap text-center">
                       <span className="text-xs font-mono font-bold text-zinc-900 bg-zinc-100 px-2 py-0.5 rounded-full">
-                        {opd.totalTickets}
+                        {opd.tickets.length}
                       </span>
                     </td>
                     <td className="p-4 whitespace-nowrap text-right">
@@ -630,72 +584,7 @@ export default function OpdPage() {
         </div>
       )}
 
-      {/* Previews & Print Modal */}
-      {isModalOpen && selectedOpd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm transition-opacity duration-200">
-          <div className="bg-white w-full max-w-sm rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden flex flex-col scale-[1.01] transition-transform">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
-              <span className="text-xs font-bold text-zinc-800 tracking-tight">Stiker QR Laporan</span>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="cursor-pointer p-1 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-50 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-6 flex flex-col items-center justify-center bg-zinc-50/50">
-              <div 
-                ref={printAreaRef}
-                className="w-full max-w-[280px] bg-white border border-zinc-200 shadow-sm rounded-2xl p-6 flex flex-col items-center text-center"
-              >
-                <span className="text-[9px] font-mono font-bold tracking-widest text-zinc-400 uppercase">NOC NETTICK SYSTEM</span>
-                <h4 className="text-xs font-extrabold text-zinc-900 mt-1 max-w-[220px] truncate">
-                  {selectedOpd.name}
-                </h4>
-                <p className="text-[9px] text-zinc-400 mt-0.5">{selectedOpd.location}</p>
-
-                <div className="my-5 p-2 bg-white border border-zinc-100 rounded-xl shadow-inner flex items-center justify-center">
-                  <img 
-                    src={getQrUrl(selectedOpd.token)} 
-                    alt="QR Code" 
-                    className="w-36 h-36 object-contain"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[9px] font-semibold text-zinc-400 block uppercase tracking-wider">PINDAI UNTUK LAPOR GANGGUAN</span>
-                  <div className="font-mono text-xs font-extrabold text-zinc-800 tracking-wider bg-zinc-50 border border-zinc-150 py-1 px-3 rounded-lg inline-block">
-                    {selectedOpd.token}
-                  </div>
-                </div>
-              </div>
-
-              <span className="text-[10px] text-zinc-400 text-center mt-4 max-w-[240px]">
-                Gunakan printer label thermal untuk hasil stiker tempel terbaik.
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 p-4 border-t border-zinc-100 bg-white">
-              <button
-                onClick={handleDownloadQr}
-                className="cursor-pointer bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Unduh QR
-              </button>
-              
-              <button
-                onClick={handlePrint}
-                className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md shadow-zinc-100"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                Cetak Stiker
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <PreviewDanPrintQR isModalOpen={isModalOpen} selectedOpd={selectedOpd} setIsModalOpen={setIsModalOpen} />
 
       {/* Registrasi Modal */}
       <ModalAddNewOpd isRegModalOpen={isRegModalOpen} opdList={opdList} setOpdList={setOpdList} setIsRegModalOpen={setIsRegModalOpen}  />
