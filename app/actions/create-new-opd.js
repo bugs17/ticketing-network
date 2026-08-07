@@ -15,6 +15,9 @@ export const creareNewOpd = async (data) => {
                 kontak_pic:data.kontak_pic,
                 token_qr:data.token_qr,
                 prioritas:data.prioritas
+            },
+            include:{
+                tickets:true
             }
         })
 

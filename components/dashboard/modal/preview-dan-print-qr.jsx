@@ -4,7 +4,9 @@ import { Download, Printer, X } from "lucide-react";
 import { useRef } from "react";
 
     const getQrUrl = (token) => {
-        const targetUrl = `https://nettick.gov/report?client=${token}`;
+        // Mengambil domain dari ENV, atau fallback ke localhost untuk dev mode
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const targetUrl = `${baseUrl}/report?client=${token}`;
         return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetUrl)}&margin=10`;
     };
 
