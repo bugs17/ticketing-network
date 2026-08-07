@@ -21,6 +21,7 @@ import ModalAddNewOpd from "@/components/dashboard/modal/register-new-opd";
 import { listOpd } from "@/app/actions/get-list-opd";
 import PreviewDanPrintQR from "@/components/dashboard/modal/preview-dan-print-qr";
 import DeleteOpd from "@/components/dashboard/modal/delete-opd";
+import EditOpd from "@/components/dashboard/modal/edit-opd";
 
 
 export default function OpdPage() {
@@ -172,7 +173,7 @@ export default function OpdPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
           <input 
             type="text" 
-            placeholder="Cari nama instansi dinas, badan, kecamatan, atau ID..." 
+            placeholder="Cari nama instansi dinas, badan, atau kecamatan." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 bg-zinc-50/50 border border-zinc-150 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors"
@@ -197,7 +198,7 @@ export default function OpdPage() {
               {filteredOpd.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-xs font-medium text-zinc-400">
-                    Tidak ditemukan data instansi OPD.
+                    Tidak ditemukan data instansi {searchQuery}.
                   </td>
                 </tr>
               ) : (
@@ -344,94 +345,7 @@ export default function OpdPage() {
       )}
 
       {/* 8. DIALOG MODAL EDIT DATA OPD (APPLE STYLE) */}
-      {editingOpd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm transition-opacity duration-200">
-          <div className="bg-white w-full max-w-md rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden flex flex-col scale-[1.01] transition-transform">
-            
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-800">
-                  <Edit2 className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-xs font-bold text-zinc-800 tracking-tight">Ubah Informasi OPD</span>
-              </div>
-              <button 
-                onClick={() => setEditingOpd(null)}
-                className="cursor-pointer p-1 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-50 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleEditSubmit}>
-              <div className="p-5 space-y-4 bg-zinc-50/30">
-                
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
-                    Nama Instansi / OPD <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingOpd.name}
-                    onChange={(e) => setEditingOpd({ ...editingOpd, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
-                    Lokasi Penempatan / Ruangan <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingOpd.location}
-                    onChange={(e) => setEditingOpd({ ...editingOpd, location: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
-                    Nama PIC / Kepala Instansi
-                  </label>
-                  <input
-                    type="text"
-                    value={editingOpd.head}
-                    onChange={(e) => setEditingOpd({ ...editingOpd, head: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl text-[10px] text-amber-700 leading-relaxed flex gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>
-                    <strong>Catatan:</strong> Jika Anda mengubah nama instansi secara signifikan, sistem akan meregenerasi token QR baru secara otomatis agar relevan dengan nama baru. Tautan lama kemungkinan tidak akan berfungsi.
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 p-4 border-t border-zinc-100 bg-white">
-                <button
-                  type="button"
-                  onClick={() => setEditingOpd(null)}
-                  className="cursor-pointer bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 font-bold text-xs py-2.5 px-4 rounded-xl transition-all"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all shadow-md"
-                >
-                  Simpan Perubahan
-                </button>
-              </div>
-            </form>
-
-          </div>
-        </div>
-      )}
+      <EditOpd editingOpd={editingOpd} setEditingOpd={setEditingOpd} setOpdList={setOpdList} />
 
       {/* 9. DIALOG MODAL KONFIRMASI HAPUS */}
       <DeleteOpd deletingOpd={deletingOpd} setDeletingOpd={setDeletingOpd} setOpdList={setOpdList} />
