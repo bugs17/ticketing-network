@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  nettick-app:
+    build: .
+    container_name: nettick_app
+    restart: always
+    ports:
+      - "3007:3000"
+      - '5557:5555'
+    # Membaca seluruh environment variables dari file .env di folder proyek
+    env_file:
+      - .env
+    volumes:
+      # Mount folder /data (yang sejajar dengan folder /app) ke dalam container
+      - ./data:/app/data
