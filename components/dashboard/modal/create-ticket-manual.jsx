@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import { TicketPlus, X, Loader2, AlertCircle } from "lucide-react";
+import { createTicketByAdmin } from "@/app/actions/create-ticket-by-admin";
 // import { createTicketAction } from "@/app/actions/create-ticket-action";
 
 
@@ -15,7 +16,7 @@ const CreateTicketManual = ({ isModalTicketOpen, setIsModalTicketOpen, setTicket
 
   const initialFormState = {
     opdId: "",
-    deskripsi: "",
+    deskripsi_masalah: "",
   };
 
   const [formState, setFormState] = useState(initialFormState);
@@ -30,17 +31,17 @@ const CreateTicketManual = ({ isModalTicketOpen, setIsModalTicketOpen, setTicket
 
     startTransition(async () => {
       // Panggil Server Action untuk pembuatan tiket manual
-      // const res = await createTicketAction(formState);
+      const {data,error,success} = await createTicketByAdmin(formState);
 
-      // if (!res?.success) {
-      //   setErrorMsg(res?.error || "Gagal membuat tiket.");
-      //   return;
-      // }
+      if (!success) {
+        setErrorMsg(error || "Gagal membuat tiket.");
+        return;
+      }
 
       // Update state list jika diperlukan
-      // if (setTicketList && res.data) {
-      //   setTicketList((prev) => [res.data, ...prev]);
-      // }
+      if (setTicketList && data) {
+        setTicketList((prev) => [data, ...prev]);
+      }
 
       // Reset form & tutup tampilan
       setFormState(initialFormState);
@@ -123,8 +124,8 @@ const CreateTicketManual = ({ isModalTicketOpen, setIsModalTicketOpen, setTicket
             <textarea
               rows={3}
               placeholder="Jelaskan detail permasalahan yang dialami..."
-              value={formState.deskripsi}
-              onChange={(e) => setFormState({ ...formState, deskripsi: e.target.value })}
+              value={formState.deskripsi_masalah}
+              onChange={(e) => setFormState({ ...formState, deskripsi_masalah: e.target.value })}
               className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm resize-none"
             />
           </div>
