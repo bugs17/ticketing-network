@@ -62,7 +62,7 @@ export async function getSlaAuditTickets() {
       // Format Waktu Indonesia
       const formattedDate = new Date(ticket.createdAt).toLocaleString("id-ID", {
         day: "numeric",
-        month: "Long",
+        month: "long",
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",

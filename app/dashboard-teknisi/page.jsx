@@ -1,87 +1,85 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition, useEffect } from "react";
 import { 
   MapPin, 
   Phone, 
   Play, 
   CheckCircle2, 
   AlertTriangle, 
-  Navigation,
   Clock,
   User,
   LogOut,
-  Bell,
   Search,
-  Filter,
   Camera,
   ArrowLeft,
   FileText,
-  Save,
-  Info
+  Save
 } from "lucide-react";
+import { getTicketsData, finishAndCloseTicket, savePartialProgress, setTicketToProgress } from "../actions/tickets-teknisi";
+import Header from "@/components/dashboard-teknisi/header";
+import { getUserProfile } from "../actions/auth";
 
-// Mock Data Tiket Awal dari Admin
-const initialTickets = [
-  {
-    id: "TK-9801",
-    opd: "Dinas Kesehatan",
-    location: "Gedung A, Lantai 2 (Ruang IT)",
-    address: "Jl. Kahuripan No. 12, Kota Malang",
-    issue: "Kabel FO Core 3 putus akibat dahan pohon tumbang",
-    priority: "Kritis",
-    priorityBg: "bg-red-50 text-red-700 border-red-100",
-    phone: "081234567890",
-    pic: "Bpk. Hermawan",
-    timeAgo: "10 menit yang lalu",
-    status: "assigned", 
-    notes: ""
-  },
-  {
-    id: "TK-9754",
-    opd: "Bappeda",
-    location: "Gedung Utama (Samping Ruang Kepala)",
-    address: "Jl. Merdeka Timur No. 3, Kota Malang",
-    issue: "Akses WiFi lambat dan sering RTO (Request Time Out)",
-    priority: "Tinggi",
-    priorityBg: "bg-amber-50 text-amber-700 border-amber-100",
-    phone: "089876543210",
-    pic: "Ibu Desi",
-    timeAgo: "25 menit yang lalu",
-    status: "assigned",
-    notes: ""
-  }
-];
 
 export default function TechnicianDashboard() {
-  const [tickets, setTickets] = useState(initialTickets);
+  const [tickets, setTickets] = useState([]);
   const [historyTickets, setHistoryTickets] = useState([]);
   const [activeTab, setActiveTab] = useState("tugas");
   const [activeTask, setActiveTask] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // State internal untuk Form input isi troubleshoot
   const [realIssue, setRealIssue] = useState("");
   const [beforeImage, setBeforeImage] = useState(null);
   const [afterImage, setAfterImage] = useState(null);
 
+  const [isPending, startTransition] = useTransition();
+  const [user, setUser] = useState(null);
+
+  // Load data awal dari Prisma SQLite
+  useEffect(() => {
+    async function loadData() {
+      const data = await getTicketsData();
+      setTickets(data.activeTickets || []);
+      setHistoryTickets(data.historyTickets || []);
+    }
+    loadData();
+  }, []);
+
+
+  useEffect(() => {
+    async function fetchUser() {
+      const data = await getUserProfile();
+      if (data) setUser(data);
+    }
+    fetchUser();
+  }, []);
+
   const handleSetProgress = (ticketId) => {
-    setTickets(prev => prev.map(t => {
-      if (t.id === ticketId) {
-        return { ...t, status: "on-progress", timeAgo: "Sedang dikerjakan" };
+    startTransition(async () => {
+      try {
+        await setTicketToProgress(ticketId);
+        setTickets(prev => prev.map(t => {
+          if (t.id === ticketId) {
+            return { ...t, status: "proses" };
+          }
+          return t;
+        }));
+      } catch (err) {
+        alert(err.message);
       }
-      return t;
-    }));
+    });
   };
 
   const handleOpenForm = (ticket) => {
     setActiveTask(ticket);
-    setRealIssue(ticket.notes || "");
-    setBeforeImage(ticket.beforeImage || null);
-    setAfterImage(ticket.afterImage || null);
+    setRealIssue(ticket.deskripsi_masalah || "");
+    setBeforeImage(ticket.url_foto_before || null);
+    setAfterImage(ticket.url_foto_after || null);
   };
 
   const handleImageUpload = (e, type) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -98,20 +96,32 @@ export default function TechnicianDashboard() {
       return;
     }
 
-    setTickets(prev => prev.map(t => {
-      if (t.id === activeTask.id) {
-        return { 
-          ...t, 
-          notes: realIssue, 
-          beforeImage: beforeImage,
-          issue: `[TERKENDALA] ${realIssue}` 
-        };
-      }
-      return t;
-    }));
+    startTransition(async () => {
+      try {
+        await savePartialProgress({
+          ticketId: activeTask.id,
+          realIssue,
+          beforeImage
+        });
 
-    alert("Progress berhasil disimpan! Status tetap 'On-Progress' di dashboard Admin.");
-    setActiveTask(null);
+        setTickets(prev => prev.map(t => {
+          if (t.id === activeTask.id) {
+            return { 
+              ...t, 
+              status: "proses",
+              deskripsi_masalah: realIssue, 
+              url_foto_before: beforeImage
+            };
+          }
+          return t;
+        }));
+
+        alert("Progress berhasil disimpan! Status tetap 'On-Progress' di database.");
+        setActiveTask(null);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
   };
 
   const handleFinishTask = (e) => {
@@ -121,25 +131,59 @@ export default function TechnicianDashboard() {
       return;
     }
 
-    const completedTicket = {
-      ...activeTask,
-      realIssue,
-      beforeImage,
-      afterImage,
-      resolvedTime: "Baru saja"
-    };
+    startTransition(async () => {
+      try {
+        await finishAndCloseTicket({
+          ticketId: activeTask.id,
+          realIssue,
+          beforeImage,
+          afterImage
+        });
 
-    setHistoryTickets([completedTicket, ...historyTickets]);
-    setTickets(prev => prev.filter(t => t.id !== activeTask.id));
-    
-    setActiveTask(null);
-    setRealIssue("");
-    setBeforeImage(null);
-    setAfterImage(null);
-    setActiveTab("selesai");
+        const completedTicket = {
+          ...activeTask,
+          status: "selesai",
+          deskripsi_masalah: realIssue,
+          url_foto_before: beforeImage,
+          url_foto_after: afterImage,
+          updatedAt: new Date().toISOString()
+        };
 
-    alert("Pekerjaan dinyatakan Rampung. Tiket ditutup!");
+        setHistoryTickets([completedTicket, ...historyTickets]);
+        setTickets(prev => prev.filter(t => t.id !== activeTask.id));
+        
+        setActiveTask(null);
+        setRealIssue("");
+        setBeforeImage(null);
+        setAfterImage(null);
+        setActiveTab("selesai");
+
+        alert("Pekerjaan dinyatakan Selesai. Tiket ditutup!");
+      } catch (err) {
+        alert(err.message);
+      }
+    });
   };
+
+  // Helper badge prioritas
+  const getPriorityBadge = (prioritas) => {
+    switch (prioritas?.toLowerCase()) {
+      case "high":
+      case "kritis":
+        return "bg-red-50 text-red-700 border-red-100";
+      case "medium":
+      case "tinggi":
+        return "bg-amber-50 text-amber-700 border-amber-100";
+      default:
+        return "bg-zinc-100 text-zinc-700 border-zinc-200";
+    }
+  };
+
+  // Filter pencarian tiket
+  const filteredTickets = tickets.filter(t => 
+    t.opd?.nama?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(t.id).includes(searchQuery)
+  );
 
   return (
     <div className="min-h-screen bg-zinc-50 pb-12 font-sans">
@@ -155,7 +199,7 @@ export default function TechnicianDashboard() {
             </button>
             <div>
               <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Dokumentasi Kerja</span>
-              <h2 className="text-sm font-bold text-zinc-950">{activeTask.opd} ({activeTask.id})</h2>
+              <h2 className="text-sm font-bold text-zinc-950">{activeTask.opd?.nama || "OPD"} (TK-{activeTask.id})</h2>
             </div>
           </div>
 
@@ -163,7 +207,7 @@ export default function TechnicianDashboard() {
           <div className="flex-1 p-4 space-y-6 overflow-y-auto">
             <div className="bg-zinc-50 p-3.5 rounded-2xl border border-zinc-150 space-y-1">
               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Masalah Awal</span>
-              <p className="text-xs font-medium text-zinc-700 leading-relaxed">{activeTask.issue}</p>
+              <p className="text-xs font-medium text-zinc-700 leading-relaxed">{activeTask.deskripsi_masalah || "Belum ada catatan awal"}</p>
             </div>
 
             <div className="space-y-2">
@@ -222,16 +266,18 @@ export default function TechnicianDashboard() {
           <div className="p-4 border-t border-zinc-100 bg-white grid grid-cols-2 gap-2.5">
             <button
               type="button"
+              disabled={isPending}
               onClick={handleSavePartialProgress}
-              className="cursor-pointer bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-xs py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all"
+              className="cursor-pointer bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-xs py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
               Simpan Terkendala
             </button>
             <button
               type="button"
+              disabled={isPending}
               onClick={handleFinishTask}
-              className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md"
+              className="cursor-pointer bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50"
             >
               <CheckCircle2 className="w-4 h-4" />
               Selesai & Tutup
@@ -243,22 +289,7 @@ export default function TechnicianDashboard() {
         
         /* LAYOUT DASHBOARD UTAMA TEKNISI */
         <>
-          <header className="sticky top-0 bg-white border-b border-zinc-150 px-4 py-3.5 flex items-center justify-between z-30 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-zinc-950 flex items-center justify-center text-white font-bold text-sm">RH</div>
-              <div>
-                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Teknisi Lapangan</span>
-                <span className="text-xs font-bold text-zinc-900 block">Rian Hidayat</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-             
-              <button className="p-2 text-zinc-400 hover:text-red-600 rounded-xl hover:bg-zinc-50 transition-colors">
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          </header>
+          <Header user={user} />
 
           <div className="max-w-md mx-auto px-4 py-4 space-y-4">
             
@@ -279,6 +310,8 @@ export default function TechnicianDashboard() {
               <div className="relative flex-1">
                 <input 
                   type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Cari ID tiket atau OPD..."
                   className="w-full bg-white border border-zinc-200 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:border-zinc-400 transition-colors"
                 />
@@ -299,44 +332,50 @@ export default function TechnicianDashboard() {
             {/* DAFTAR TIKET */}
             {activeTab === "tugas" ? (
               <div className="space-y-4">
-                {tickets.length > 0 ? (
-                  tickets.map((ticket) => (
+                {filteredTickets.length > 0 ? (
+                  filteredTickets.map((ticket) => (
                     <div key={ticket.id} className="bg-white border border-zinc-150 rounded-3xl p-5 shadow-sm space-y-4">
                       <div className="flex items-start justify-between">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-bold text-zinc-500">{ticket.id}</span>
+                            <span className="font-mono text-xs font-bold text-zinc-500">TK-{ticket.id}</span>
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                              ticket.status === "on-progress" ? "bg-blue-50 text-blue-700 border-blue-100" : ticket.priorityBg
+                              ticket.status === "proses" ? "bg-blue-50 text-blue-700 border-blue-100" : getPriorityBadge(ticket.opd?.prioritas)
                             }`}>
-                              {ticket.status === "on-progress" ? "⚡ On Progress" : ticket.priority}
+                              {ticket.status === "proses" ? "⚡ On Progress" : ticket.opd?.prioritas || "Normal"}
                             </span>
                           </div>
-                          <h3 className="text-sm font-bold text-zinc-900 mt-1">{ticket.opd}</h3>
+                          <h3 className="text-sm font-bold text-zinc-900 mt-1">{ticket.opd?.nama || "OPD"}</h3>
                         </div>
                       </div>
 
                       <div className="bg-zinc-50 p-3 rounded-xl border text-xs">
                         <span className="text-[9px] font-bold text-zinc-400 uppercase block tracking-wider mb-0.5">Deskripsi Masalah</span>
-                        <p className="font-bold text-zinc-800">{ticket.issue}</p>
+                        <p className="font-bold text-zinc-800">{ticket.deskripsi_masalah || "Belum ada rincian"}</p>
                       </div>
 
                       <div className="space-y-1.5 text-xs text-zinc-600">
                         <div className="flex items-start gap-1.5">
                           <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
-                          <span><strong>{ticket.location}</strong> - {ticket.address}</span>
+                          <span><strong>{ticket.opd?.nama || "-"}</strong></span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <User className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>PIC: {ticket.pic} (<a href={`tel:${ticket.phone}`} className="text-blue-600 underline font-semibold">{ticket.phone}</a>)</span>
+                          <span>
+                            PIC: {ticket.opd?.nama_pic || "-"} (
+                            <a href={`tel:${ticket.opd?.kontak_pic}`} className="text-blue-600 underline font-semibold">
+                              {ticket.opd?.kontak_pic || "-"}
+                            </a>
+                          )
+                          </span>
                         </div>
                       </div>
 
-
-                      {ticket.status === "assigned" ? (
+                      {ticket.status === "menunggu" ? (
                         <button 
+                          disabled={isPending}
                           onClick={() => handleSetProgress(ticket.id)}
-                          className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs rounded-2xl transition-all shadow-sm"
+                          className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs rounded-2xl transition-all shadow-sm disabled:opacity-50"
                         >
                           <Play className="w-4 h-4 fill-white" />
                           Mulai Kerjakan Sekarang
@@ -356,34 +395,42 @@ export default function TechnicianDashboard() {
                   <div className="text-center py-12 space-y-2 bg-white border border-zinc-150 rounded-3xl p-6">
                     <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
                     <p className="text-xs font-bold text-zinc-800">Semua tugas selesai!</p>
-                    <p className="text-[11px] text-zinc-400">Belum ada kiriman tiket baru dari administrator.</p>
+                    <p className="text-[11px] text-zinc-400">Belum ada kiriman tiket baru dari system.</p>
                   </div>
                 )}
               </div>
             ) : (
-              /* TAB SELESAI (Kondisi Kosong / Empty State Dikembalikan ke Sini) */
+              /* TAB SELESAI */
               <div className="space-y-4">
                 {historyTickets.length > 0 ? (
                   historyTickets.map((ticket) => (
                     <div key={ticket.id} className="bg-white border rounded-3xl p-5 shadow-sm space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold text-zinc-400 block">{ticket.id}</span>
+                        <span className="font-mono text-xs font-bold text-zinc-400 block">TK-{ticket.id}</span>
                         <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-150">
                           Selesai
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-zinc-900">{ticket.opd}</h4>
+                      <h4 className="text-xs font-bold text-zinc-900">{ticket.opd?.nama || "OPD"}</h4>
                       <div className="text-[11px] text-zinc-600 bg-zinc-50 p-2.5 rounded-xl border">
-                        <strong>Hasil Akhir:</strong> {ticket.realIssue}
+                        <strong>Hasil Akhir:</strong> {ticket.deskripsi_masalah || "-"}
                       </div>
                       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-100">
                         <div className="text-center">
                           <span className="text-[9px] font-bold text-zinc-400 block mb-1">BEFORE</span>
-                          <img src={ticket.beforeImage} className="w-full h-20 object-cover rounded-xl border" />
+                          {ticket.url_foto_before ? (
+                            <img src={ticket.url_foto_before} alt="Before" className="w-full h-20 object-cover rounded-xl border" />
+                          ) : (
+                            <div className="w-full h-20 bg-zinc-100 rounded-xl flex items-center justify-center text-[9px] text-zinc-400">Tidak Ada Foto</div>
+                          )}
                         </div>
                         <div className="text-center">
                           <span className="text-[9px] font-bold text-zinc-400 block mb-1">AFTER</span>
-                          <img src={ticket.afterImage} className="w-full h-20 object-cover rounded-xl border" />
+                          {ticket.url_foto_after ? (
+                            <img src={ticket.url_foto_after} alt="After" className="w-full h-20 object-cover rounded-xl border" />
+                          ) : (
+                            <div className="w-full h-20 bg-zinc-100 rounded-xl flex items-center justify-center text-[9px] text-zinc-400">Tidak Ada Foto</div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -391,8 +438,8 @@ export default function TechnicianDashboard() {
                 ) : (
                   <div className="text-center py-12 space-y-2 bg-white border border-zinc-150 rounded-3xl p-6">
                     <Clock className="w-8 h-8 text-zinc-300 mx-auto" />
-                    <p className="text-xs font-bold text-zinc-800">Tidak ada riwayat untuk hari ini</p>
-                    <p className="text-[11px] text-zinc-400">Tiket yang Anda rampungkan hari ini akan tercatat di sini.</p>
+                    <p className="text-xs font-bold text-zinc-800">Tidak ada riwayat selesai dalam 2 hari terakhir</p>
+                    <p className="text-[11px] text-zinc-400">Tiket yang diselesaikan hari ini dan kemarin akan tercatat di sini.</p>
                   </div>
                 )}
               </div>

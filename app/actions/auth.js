@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { SignJWT } from "jose";
+import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -71,10 +71,35 @@ export async function loginAction({ username, password }) {
 
 
 
+// FUNGSI UNTUK MENGAMBIL USER PROFILE DARI COOKIE JWT
+export async function getUserProfile() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
+
+    // DEBUG 1: Cek apakah cookie terbaca
+    if (!token) {
+      return null;
+    }
+
+    // DEBUG 2: Verifikasi Token JWT
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+
+    // Ambil field sesuai isi payload yang di-set saat loginAction
+    return {
+      nama: payload.nama || payload.username || "Teknisi Lapangan",
+      role: payload.role || "teknisi",
+      username: payload.username || "",
+    };
+  } catch (error) {
+    // DEBUG 3: Tangkap error jika token kadaluwarsa / secret key mismatch
+    return null;
+  }
+}
+
 export async function logoutAction() {
   try {
     const cookieStore = await cookies();
-    // Hapus cookie auth_token yang diset saat login
     cookieStore.delete("auth_token");
     return { success: true };
   } catch (error) {
