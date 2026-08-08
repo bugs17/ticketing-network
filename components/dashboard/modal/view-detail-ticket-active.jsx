@@ -1,10 +1,11 @@
 "use client";
 
-import { X, UserCheck, UserX, Building2, Phone } from "lucide-react";
+import { Building2, Phone, UserCheck, UserX, X } from "lucide-react";
 
-const ViewTicketModal = ({ ticket, isOpen, onClose }) => {
-  if (!isOpen || !ticket) return null;
-
+const ViewDetailTicketActive = ({selectedTicket, setSelectedTicket}) => {
+    if (!selectedTicket) {
+        return null;
+    }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm transition-opacity">
           <div className="bg-white w-full max-w-lg rounded-3xl border border-zinc-100 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -12,10 +13,10 @@ const ViewTicketModal = ({ ticket, isOpen, onClose }) => {
             <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono font-bold px-2.5 py-1 bg-zinc-100 text-zinc-900 rounded-lg">
-                  TCK-{ticket.id}
+                  TCK-{selectedTicket.id}
                 </span>
                 <span className="text-xs font-medium text-zinc-400">
-                  {new Date(ticket.createdAt).toLocaleString("id-ID", {
+                  {new Date(selectedTicket.createdAt).toLocaleString("id-ID", {
                     dateStyle: "medium",
                     timeStyle: "short",
                   })}
@@ -23,7 +24,7 @@ const ViewTicketModal = ({ ticket, isOpen, onClose }) => {
               </div>
               <button
                 type="button"
-                onClick={() => onClose(null)}
+                onClick={() => setSelectedTicket(null)}
                 className="cursor-pointer text-zinc-400 hover:text-zinc-900 p-1.5 rounded-xl hover:bg-zinc-100 transition-colors"
               >
                 <X className="w-4 h-4" />
@@ -37,7 +38,7 @@ const ViewTicketModal = ({ ticket, isOpen, onClose }) => {
                 <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider block">
                   Status Penanganan
                 </span>
-                {ticket.status === "proses" ? (
+                {selectedTicket.status === "proses" ? (
                   <div className="flex items-center gap-3 text-blue-700 bg-blue-50 border border-blue-100 p-3 rounded-xl">
                     <UserCheck className="w-5 h-5 shrink-0 text-blue-600" />
                     <div>
@@ -72,7 +73,7 @@ const ViewTicketModal = ({ ticket, isOpen, onClose }) => {
                       <span className="text-[10px] font-semibold uppercase">Nama OPD</span>
                     </div>
                     <p className="font-bold text-zinc-800">
-                      {ticket.opd?.nama || "-"}
+                      {selectedTicket.opd?.nama || "-"}
                     </p>
                   </div>
 
@@ -82,10 +83,10 @@ const ViewTicketModal = ({ ticket, isOpen, onClose }) => {
                       <span className="text-[10px] font-semibold uppercase">PIC & Kontak</span>
                     </div>
                     <p className="font-bold text-zinc-800">
-                      {ticket.opd?.nama_pic || "-"}
+                      {selectedTicket.opd?.nama_pic || "-"}
                     </p>
                     <p className="text-[11px] text-zinc-500 font-mono">
-                      {ticket.opd?.kontak_pic || "-"}
+                      {selectedTicket.opd?.kontak_pic || "-"}
                     </p>
                   </div>
                 </div>
@@ -97,7 +98,7 @@ const ViewTicketModal = ({ ticket, isOpen, onClose }) => {
                   Rincian Masalah
                 </h4>
                 <div className="p-4 rounded-2xl border border-zinc-100 bg-zinc-50 text-xs text-zinc-800 leading-relaxed font-medium">
-                  {ticket.deskripsi_masalah || "Tidak ada deskripsi detail."}
+                  {selectedTicket.deskripsi_masalah || "Tidak ada deskripsi detail."}
                 </div>
               </div>
             </div>
@@ -106,7 +107,7 @@ const ViewTicketModal = ({ ticket, isOpen, onClose }) => {
             <div className="px-6 py-4 bg-zinc-50 border-t border-zinc-100 flex items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={() => onClose(null)}
+                onClick={() => setSelectedTicket(null)}
                 className="cursor-pointer py-2 px-4 text-xs font-semibold text-zinc-700 bg-white border border-zinc-200 hover:bg-zinc-100 rounded-xl transition-colors"
               >
                 Tutup
@@ -114,7 +115,7 @@ const ViewTicketModal = ({ ticket, isOpen, onClose }) => {
             </div>
           </div>
         </div>
-  );
-};
+  )
+}
 
-export default ViewTicketModal;
+export default ViewDetailTicketActive
