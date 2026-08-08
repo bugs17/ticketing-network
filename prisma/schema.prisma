@@ -47,6 +47,9 @@ model Ticket {
 
   deskripsi_masalah String?
 
+  url_foto_before String?
+  url_foto_after String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
