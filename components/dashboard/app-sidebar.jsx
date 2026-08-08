@@ -26,6 +26,7 @@ import {
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { logoutAction, getUserProfile } from "@/app/actions/auth" // Sesuaikan path lokasi logoutAction
+import Image from "next/image"
 
 const navigationItems = [
   { title: "Overview", icon: LayoutDashboard, url: "/dashboard" },
@@ -96,22 +97,24 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-zinc-100 bg-white">
       {/* HEADER SIDEBAR: Informasi Aplikasi */}
-      <SidebarHeader className="h-16 border-b border-zinc-100 px-6 py-0 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3 h-full">
-          <div className="w-8 h-8 rounded-xl bg-zinc-950 flex items-center justify-center shadow-md shadow-zinc-200 shrink-0">
-            <TicketCheck className="w-4 h-4 text-white" />
-          </div>
-          
-          <div className="flex flex-col justify-center min-w-0">
-            <span className="font-bold tracking-tighter block text-sm text-zinc-950 leading-none">
-              NetTick Console
-            </span>
-            <span className="text-[10px] text-emerald-600 font-semibold tracking-wider block mt-1 leading-none">
-              INTERNAL NOC
-            </span>
-          </div>
-        </div>
-      </SidebarHeader>
+      <SidebarHeader className="h-16 border-b border-zinc-100 px-5 flex items-center justify-between shrink-0">
+      {/* Logo Diskominfo Ukuran Proporsional & Lebih Besar */}
+      <div className="relative h-10 w-auto max-w-[170px] shrink-0 flex items-center">
+        <Image
+          src="/logo.png"
+          alt="Diskominfo Mimika"
+          width={200}
+          height={40}
+          className="h-full w-auto object-contain object-left"
+          priority
+        />
+      </div>
+
+      {/* Badge Internal NOC di Sisi Kanan */}
+      {/* <span className="text-[9px] text-[#372aac] font-bold tracking-wider uppercase bg-[#372aac]/10 border border-[#372aac]/20 px-2 py-0.5 rounded-full shrink-0">
+        NOC
+      </span> */}
+    </SidebarHeader>
 
       {/* CONTENT SIDEBAR: Menu Navigasi Utama */}
       <SidebarContent className="px-3 py-4 bg-white">
@@ -126,10 +129,9 @@ export function AppSidebar() {
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
-                    asChild 
                     className={`w-full h-auto p-0 rounded-xl transition-all duration-150 ${
                       isActive 
-                        ? "bg-zinc-950 text-white hover:bg-zinc-950 hover:text-white shadow-md shadow-zinc-300" 
+                        ? "bg-[#372aac] text-white hover:bg-[#372aac] hover:text-white shadow-md shadow-[#372aac]/20" 
                         : "text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50"
                     }`}
                   >
@@ -162,7 +164,7 @@ export function AppSidebar() {
             </>
           ) : (
             <>
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 font-bold text-xs shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[#372aac]/10 border border-[#372aac]/20 flex items-center justify-center text-[#372aac] font-bold text-xs shrink-0">
                 {getInitials(userProfile?.nama)}
               </div>
               <div className="leading-none overflow-hidden flex-1 min-w-0">

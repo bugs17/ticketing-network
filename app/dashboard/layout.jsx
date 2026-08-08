@@ -1,12 +1,11 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
-import { ShieldAlert } from "lucide-react"
 import { AppSidebar } from "@/components/dashboard/app-sidebar"
 
 export default function DashboardLayout({ children }) {
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-screen overflow-hidden bg-zinc-50/50 text-zinc-900 selection:bg-emerald-100">
+      <div className="flex h-screen w-screen overflow-hidden bg-zinc-50/50 text-zinc-900 selection:bg-[#372aac]/20">
         
         {/* Render Komponen Sidebar Utama */}
         <AppSidebar />

@@ -63,6 +63,15 @@ export async function middleware(request) {
   return NextResponse.next();
 }
 
+// PERBAIKAN DI SINI: Pengecualian aset statis & gambar
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/dashboard-teknisi/:path*"],
+  matcher: [
+    /*
+     * Match semua request rute KECUALI yang berakhiran ekstensi statis:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico, logo.png, dll.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

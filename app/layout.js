@@ -14,6 +14,11 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "E-Ticketing Diskominfo Timika",
   description: "Aplikasi E-Ticketing Diskominfo Timika",
+  icons: {
+    icon: "/logo_mimika2.png",
+    shortcut: "/logo_mimika2.png",
+    apple: "/logo_mimika2.png",
+  },
 };
 
 export default function RootLayout({ children }) {

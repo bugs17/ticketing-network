@@ -53,7 +53,7 @@ export default function DashboardOverview() {
         {/* Status System Badge */}
         <div className="self-start md:self-auto flex items-center gap-2 px-3.5 py-2 bg-emerald-50/50 border border-emerald-100 rounded-xl text-emerald-700 text-xs font-medium">
           <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          Semua sistem NOC berjalan normal
+          Sistem normal
         </div>
       </div>
 
