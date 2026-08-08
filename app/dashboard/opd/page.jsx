@@ -83,45 +83,7 @@ export default function OpdPage() {
     setIsModalOpen(true);
   };
 
-  const generateToken = (name) => {
-    const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 10);
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    return `${cleanName}-noc-token-${randomNum}`;
-  };
 
-
-  // Edit Submit
-  const handleEditSubmit = (e) => {
-    e.preventDefault();
-    if (!editingOpd.name || !editingOpd.location) return;
-
-    setOpdList(opdList.map(opd => {
-      if (opd.id === editingOpd.id) {
-        // Jika nama berubah, kita buatkan token yang lebih relevan (opsional)
-        const updatedToken = opd.name !== editingOpd.name 
-          ? generateToken(editingOpd.name) 
-          : opd.token;
-
-        return {
-          ...opd,
-          name: editingOpd.name,
-          head: editingOpd.head || "Belum ditentukan",
-          location: editingOpd.location,
-          token: updatedToken
-        };
-      }
-      return opd;
-    }));
-
-    setEditingOpd(null);
-  };
-
-  // Hapus Submit
-  const handleDeleteConfirm = () => {
-    if (!deletingOpd) return;
-    setOpdList(opdList.filter(opd => opd.id !== deletingOpd.id));
-    setDeletingOpd(null);
-  };
 
   // Event Handler Klik Kanan Kustom
   const handleContextMenu = (e, opd) => {
