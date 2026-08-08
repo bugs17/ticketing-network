@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  nettick-app:
+    build: .
+    container_name: nettick_app
+    restart: always
+    ports:
+      - "3007:3000"
+      - '5507:5555'
+    env_file:
+      - .env
+    volumes:
+      # Mount folder /data lokal (di root proyek) ke internal container /app/data
+      - ./data:/app/data
