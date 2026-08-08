@@ -5,11 +5,10 @@ import {
   TicketCheck, 
   LayoutDashboard, 
   Layers, 
-  Settings, 
   Users2, 
   LogOut, 
-  ShieldCheck,
-  FileDown 
+  FileDown,
+  Loader2
 } from "lucide-react"
 
 import {
@@ -24,11 +23,12 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar"
 
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
+import { logoutAction } from "@/app/actions/auth" // Sesuaikan path lokasi logoutAction kamu
 
 const navigationItems = [
-  { title: "Overview", icon: LayoutDashboard, url: "/dashboard", active: true },
+  { title: "Overview", icon: LayoutDashboard, url: "/dashboard" },
   { title: "Tiket Aduan", icon: TicketCheck, url: "/dashboard/tickets" },
   { title: "Manajemen OPD", icon: Layers, url: "/dashboard/opd" },
   { title: "Manajemen User", icon: Users2, url: "/dashboard/users" },
@@ -36,30 +36,46 @@ const navigationItems = [
 ]
 
 export function AppSidebar() {
+  const pathname = usePathname()
+  const router = useRouter()
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false)
 
-    const pathname = usePathname()
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true)
+      const res = await logoutAction()
+      
+      if (res?.success) {
+        // Refresh & redirect ke halaman utama/login
+        router.push("/")
+        router.refresh()
+      }
+    } catch (error) {
+      console.error("Gagal logout:", error)
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
     <Sidebar className="border-r border-zinc-100 bg-white">
       {/* HEADER SIDEBAR: Informasi Aplikasi */}
       <SidebarHeader className="h-16 border-b border-zinc-100 px-6 py-0 flex items-center justify-between shrink-0">
-  <div className="flex items-center gap-3 h-full">
-    {/* Ikon Aplikasi */}
-    <div className="w-8 h-8 rounded-xl bg-zinc-950 flex items-center justify-center shadow-md shadow-zinc-200 shrink-0">
-      <TicketCheck className="w-4 h-4 text-white" />
-    </div>
-    
-    {/* Teks Deskripsi */}
-    <div className="flex flex-col justify-center min-w-0">
-      <span className="font-bold tracking-tighter block text-sm text-zinc-950 leading-none">
-        NetTick Console
-      </span>
-      <span className="text-[10px] text-emerald-600 font-semibold tracking-wider block mt-1 leading-none">
-        INTERNAL NOC
-      </span>
-    </div>
-  </div>
-</SidebarHeader>
+        <div className="flex items-center gap-3 h-full">
+          <div className="w-8 h-8 rounded-xl bg-zinc-950 flex items-center justify-center shadow-md shadow-zinc-200 shrink-0">
+            <TicketCheck className="w-4 h-4 text-white" />
+          </div>
+          
+          <div className="flex flex-col justify-center min-w-0">
+            <span className="font-bold tracking-tighter block text-sm text-zinc-950 leading-none">
+              NetTick Console
+            </span>
+            <span className="text-[10px] text-emerald-600 font-semibold tracking-wider block mt-1 leading-none">
+              INTERNAL NOC
+            </span>
+          </div>
+        </div>
+      </SidebarHeader>
 
       {/* CONTENT SIDEBAR: Menu Navigasi Utama */}
       <SidebarContent className="px-3 py-4 bg-white">
@@ -69,7 +85,6 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
             {navigationItems.map((item) => {
-              // Cocokkan apakah URL saat ini sama dengan URL item menu
               const isActive = pathname === item.url
 
               return (
@@ -111,9 +126,17 @@ export function AppSidebar() {
 
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50/50 transition-colors">
-              <LogOut className="w-4 h-4 opacity-80" />
-              <span>Keluar</span>
+            <SidebarMenuButton 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50/50 transition-colors disabled:opacity-50"
+            >
+              {isLoggingOut ? (
+                <Loader2 className="w-4 h-4 animate-spin text-red-600" />
+              ) : (
+                <LogOut className="w-4 h-4 opacity-80" />
+              )}
+              <span>{isLoggingOut ? "Keluar..." : "Keluar"}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

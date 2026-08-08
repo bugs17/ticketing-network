@@ -68,3 +68,17 @@ export async function loginAction({ username, password }) {
     return { error: "Terjadi kesalahan pada server. Coba lagi nanti." };
   }
 }
+
+
+
+export async function logoutAction() {
+  try {
+    const cookieStore = await cookies();
+    // Hapus cookie auth_token yang diset saat login
+    cookieStore.delete("auth_token");
+    return { success: true };
+  } catch (error) {
+    console.error("Logout Error:", error);
+    return { error: "Gagal melakukan logout." };
+  }
+}
