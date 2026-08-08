@@ -30,11 +30,13 @@ export default function DashboardLayout({ children }) {
               </div>
             </div>
 
-            {/* Sisi Kanan Topbar: Status Indikator Sistem */}
+            {/* Sisi Kanan Topbar: Versi Aplikasi */}
             <div className="flex items-center gap-3">
-              <Badge variant="outline" className="border-emerald-100 bg-emerald-50/60 text-emerald-700 text-[10px] font-mono px-2.5 py-0.5 shadow-none rounded-md flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                NOC Server: Connected
+              <Badge 
+                variant="outline" 
+                className="border-zinc-200 bg-zinc-50/80 text-zinc-600 text-[10px] font-mono px-2.5 py-0.5 shadow-none rounded-md flex items-center gap-1.5"
+              >
+                <span className="text-zinc-400 font-normal">v</span>1.0.0
               </Badge>
             </div>
           </header>

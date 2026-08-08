@@ -90,6 +90,7 @@ export async function getUserProfile() {
       nama: payload.nama || payload.username || "Teknisi Lapangan",
       role: payload.role || "teknisi",
       username: payload.username || "",
+      success:true
     };
   } catch (error) {
     // DEBUG 3: Tangkap error jika token kadaluwarsa / secret key mismatch
