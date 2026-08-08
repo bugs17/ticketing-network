@@ -21,7 +21,7 @@ export async function middleware(request) {
 
   const user = await verifyToken();
 
-  // 1. JIKA DIAKSES DI HALAMAN UTAMA ("/")
+  // 1. JIKA DIAKSES DI HALAMAN UTAMA ("/") ATAU HALAMAN LOGIN
   if (pathname === "/") {
     if (user) {
       if (user.role === "admin") {
@@ -34,21 +34,9 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  // 2. JIKA DIAKSES DI RUTE /dashboard (KHUSUS ADMIN)
-  if (pathname.startsWith("/dashboard") && !pathname.startsWith("/dashboard-teknisi")) {
-    if (!user) {
-      const response = NextResponse.redirect(new URL("/", request.url));
-      if (token) response.cookies.delete("auth_token");
-      return response;
-    }
-
-    if (user.role === "teknisi") {
-      return NextResponse.redirect(new URL("/dashboard-teknisi", request.url));
-    }
-  }
-
-  // 3. JIKA DIAKSES DI RUTE /dashboard-teknisi (KHUSUS TEKNISI)
-  if (pathname.startsWith("/dashboard-teknisi")) {
+  // 2. JIKA DIAKSES DI RUTE /dashboard-teknisi (KHUSUS TEKNISI)
+  // Letakkan pengecekan teknisi DI ATAS /dashboard agar tidak tertangkap duluan oleh .startsWith("/dashboard")
+  if (pathname === "/dashboard-teknisi" || pathname.startsWith("/dashboard-teknisi/")) {
     if (!user) {
       const response = NextResponse.redirect(new URL("/", request.url));
       if (token) response.cookies.delete("auth_token");
@@ -58,20 +46,30 @@ export async function middleware(request) {
     if (user.role === "admin") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
+    
+    return NextResponse.next();
+  }
+
+  // 3. JIKA DIAKSES DI RUTE /dashboard (KHUSUS ADMIN)
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+    if (!user) {
+      const response = NextResponse.redirect(new URL("/", request.url));
+      if (token) response.cookies.delete("auth_token");
+      return response;
+    }
+
+    if (user.role === "teknisi") {
+      return NextResponse.redirect(new URL("/dashboard-teknisi", request.url));
+    }
+
+    return NextResponse.next();
   }
 
   return NextResponse.next();
 }
 
-// PERBAIKAN DI SINI: Pengecualian aset statis & gambar
 export const config = {
   matcher: [
-    /*
-     * Match semua request rute KECUALI yang berakhiran ekstensi statis:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, logo.png, dll.
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
