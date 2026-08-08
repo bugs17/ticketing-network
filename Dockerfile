@@ -2,7 +2,7 @@
 FROM node:23.7.0-alpine AS builder
 WORKDIR /app
 
-RUN apk add --no-co-cache libc6-compat
+RUN apk add --no-cache libc6-compat
 
 COPY package*.json ./
 RUN npm ci
