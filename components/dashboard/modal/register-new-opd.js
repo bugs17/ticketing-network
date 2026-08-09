@@ -44,7 +44,6 @@ const ModalAddNewOpd = ({ isRegModalOpen, setIsRegModalOpen, opdList, setOpdList
         token_qr: generateToken(newOpd.nama),
       };
 
-      console.log("Payload siap dikirim ke Server Action:", payload);
 
       // Panggil Server Action
       const {data,error,success} = await creareNewOpd(payload);

@@ -110,10 +110,6 @@ export function AppSidebar() {
         />
       </div>
 
-      {/* Badge Internal NOC di Sisi Kanan */}
-      {/* <span className="text-[9px] text-[#372aac] font-bold tracking-wider uppercase bg-[#372aac]/10 border border-[#372aac]/20 px-2 py-0.5 rounded-full shrink-0">
-        NOC
-      </span> */}
     </SidebarHeader>
 
       {/* CONTENT SIDEBAR: Menu Navigasi Utama */}
