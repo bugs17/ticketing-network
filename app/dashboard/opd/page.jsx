@@ -71,11 +71,53 @@ export default function OpdPage() {
   );
 
   const handleCopyLink = (token) => {
-    const baseurl = process.env.NEXT_PUBLIC_APP_URL
+    const baseurl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
     const generatedUrl = `${baseurl}/report?client=${token}`;
-    navigator.clipboard.writeText(generatedUrl);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(null), 2000);
+
+    // Gunakan Clipboard API modern jika didukung (HTTPS / Localhost)
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(generatedUrl).then(() => {
+        setCopiedToken(token);
+        setTimeout(() => setCopiedToken(null), 2000);
+      }).catch((err) => {
+        console.error("Gagal menyalin dengan Clipboard API:", err);
+        fallbackCopyTextToClipboard(generatedUrl, token);
+      });
+    } else {
+      // Fallback untuk HTTP biasa / browser lama
+      fallbackCopyTextToClipboard(generatedUrl, token);
+    }
+  };
+
+  // Fungsi Cadangan (Fallback) untuk HTTP / Non-Secure Context
+  const fallbackCopyTextToClipboard = (text, token) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    
+    // Pastikan textarea tidak terlihat dan tidak menggeser halaman
+    textArea.style.position = "fixed";
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.opacity = "0";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        setCopiedToken(token);
+        setTimeout(() => setCopiedToken(null), 2000);
+      } else {
+        alert("Gagal menyalin tautan.");
+      }
+    } catch (err) {
+      console.error("Fallback copy error:", err);
+      alert("Browser tidak mendukung fitur salin otomatis.");
+    }
+
+    document.body.removeChild(textArea);
   };
 
   const handleOpenPrintModal = (opd) => {
