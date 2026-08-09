@@ -68,10 +68,10 @@ export default function LandingPage() {
             {/* Teks Nama Aplikasi (NetTick) */}
             <div className="shrink-0">
               <span className="font-bold tracking-tight block text-sm sm:text-base text-zinc-950 leading-none">
-                NetTick <span className="font-medium text-zinc-400">Mimika</span>
+                Helpdesk <span className="font-medium text-zinc-400">Ticketing System</span>
               </span>
               <span className="text-[9px] text-zinc-400 block mt-0.5 font-medium tracking-wider uppercase">
-                SYSTEM PORTAL
+                Kabupaten Mimika
               </span>
             </div>
           </div>
