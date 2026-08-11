@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CheckCircle2, Phone, UserCheck, UserX, X } from "lucide-react";
+import { Building2, CheckCircle2, Phone, User, UserCheck, UserX, X } from "lucide-react";
 
 const ViewDetailTicketActive = ({ selectedTicket, setSelectedTicket }) => {
   if (!selectedTicket) {
@@ -85,32 +85,37 @@ const ViewDetailTicketActive = ({ selectedTicket, setSelectedTicket }) => {
             )}
           </div>
 
-          {/* Informasi Pelapor / OPD */}
+          {/* Informasi Pelapor & OPD */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-zinc-900 uppercase tracking-wider font-mono">
-              Informasi OPD
+              Informasi Pelapor & OPD
             </h4>
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl border border-zinc-100 bg-white">
+              {/* Informasi Pelapor */}
+              <div className="p-3 rounded-xl border border-zinc-100 bg-white space-y-1">
                 <div className="flex items-center gap-1.5 text-zinc-400 mb-1">
-                  <Building2 className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-semibold uppercase">Nama OPD</span>
+                  <User className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-semibold uppercase">Pelapor</span>
                 </div>
-                <p className="font-bold text-zinc-800">
-                  {selectedTicket.opd?.nama || "-"}
+                <p className="font-bold text-zinc-800 truncate">
+                  {selectedTicket.nama_pelapor || "-"}
+                </p>
+                <p className="text-[11px] text-zinc-500 font-mono truncate">
+                  {selectedTicket.kontak_pelapor || "-"}
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl border border-zinc-100 bg-white">
+              {/* Informasi OPD */}
+              <div className="p-3 rounded-xl border border-zinc-100 bg-white space-y-1">
                 <div className="flex items-center gap-1.5 text-zinc-400 mb-1">
-                  <Phone className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-semibold uppercase">PIC & Kontak</span>
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-semibold uppercase">Instansi OPD</span>
                 </div>
-                <p className="font-bold text-zinc-800">
-                  {selectedTicket.opd?.nama_pic || "-"}
+                <p className="font-bold text-zinc-800 truncate">
+                  {selectedTicket.opd?.nama || "-"}
                 </p>
-                <p className="text-[11px] text-zinc-500 font-mono">
-                  {selectedTicket.opd?.kontak_pic || "-"}
+                <p className="text-[11px] text-zinc-500 truncate">
+                  PIC: {selectedTicket.opd?.nama_pic || "-"}
                 </p>
               </div>
             </div>

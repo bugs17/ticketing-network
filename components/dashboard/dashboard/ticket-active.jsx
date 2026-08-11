@@ -8,6 +8,7 @@ import {
   Clock,
   Loader2,
   Phone,
+  User,
   UserCheck,
   UserX,
   Wrench,
@@ -99,18 +100,25 @@ const TicketActive = () => {
                   </span>
                 </div>
 
-                {/* 2. Isi Masalah */}
-                <div className="p-4 py-3.5 space-y-2 flex-grow">
+                {/* 2. Isi Masalah & Pelapor */}
+                <div className="p-4 py-3.5 space-y-2.5 flex-grow">
                   <div className="leading-tight">
                     <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 block mb-0.5">
-                      Pelapor
+                      Instansi OPD
                     </span>
                     <h4 className="text-xs font-bold text-zinc-800 truncate">
                       {ticket.opd?.nama || "OPD Tidak Teridentifikasi"}
                     </h4>
                   </div>
 
-                  <div className="leading-normal">
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-600">
+                    <User className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                    <span className="font-medium truncate">
+                      Pelapor: <span className="font-bold text-zinc-900">{ticket.nama_pelapor || "-"}</span>
+                    </span>
+                  </div>
+
+                  <div className="leading-normal pt-1 border-t border-zinc-50">
                     <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 block mb-0.5">
                       Deskripsi Masalah
                     </span>

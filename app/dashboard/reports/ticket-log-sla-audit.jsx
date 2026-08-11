@@ -9,7 +9,9 @@ import {
   Download,
   ImageOff,
   Loader2,
+  Phone,
   ShieldCheck,
+  User,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -166,6 +168,11 @@ const TicketLogSLA = () => {
             <div class="val">${ticket.opd}</div>
           </div>
           <div class="card">
+            <div class="label">Nama & Kontak Pelapor</div>
+            <div class="val">${ticket.nama_pelapor || "-"}</div>
+            <div style="font-size: 9pt; color: #71717a; font-family: monospace; font-weight: normal;">${ticket.kontak_pelapor || "-"}</div>
+          </div>
+          <div class="card">
             <div class="label">Tanggal Laporan</div>
             <div class="val">${ticket.date}</div>
           </div>
@@ -276,6 +283,7 @@ const TicketLogSLA = () => {
                   <tr className="border-b border-zinc-100 text-[10px] font-bold text-zinc-400 uppercase tracking-wider bg-zinc-50/50">
                     <th className="p-3 font-mono">ID TIKET</th>
                     <th className="p-3">Instansi Pelapor</th>
+                    <th className="p-3">Pelapor</th>
                     <th className="p-3">Kategori Masalah</th>
                     <th className="p-3">Prioritas</th>
                     <th className="p-3">Respons SLA</th>
@@ -295,6 +303,10 @@ const TicketLogSLA = () => {
                         </span>
                       </td>
                       <td className="p-3 font-bold text-zinc-800">{ticket.opd}</td>
+                      <td className="p-3">
+                        <div className="font-bold text-zinc-800">{ticket.nama_pelapor || "-"}</div>
+                        <div className="text-[10px] text-zinc-400 font-mono">{ticket.kontak_pelapor || "-"}</div>
+                      </td>
                       <td className="p-3 text-zinc-500 max-w-xs truncate">
                         {ticket.category}
                       </td>
@@ -450,6 +462,27 @@ const TicketLogSLA = () => {
                         {selectedTicketForAudit.date}
                       </span>
                     </div>
+
+                    {/* Informasi Pelapor & Kontak */}
+                    <div className="col-span-2 pt-2 border-t border-zinc-200/50 grid grid-cols-2 gap-2">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1">
+                          <User className="w-3 h-3" /> Pelapor
+                        </span>
+                        <span className="font-bold text-zinc-800 text-[11px]">
+                          {selectedTicketForAudit.nama_pelapor || "-"}
+                        </span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1">
+                          <Phone className="w-3 h-3" /> Kontak Pelapor
+                        </span>
+                        <span className="font-mono text-zinc-600 text-[11px]">
+                          {selectedTicketForAudit.kontak_pelapor || "-"}
+                        </span>
+                      </div>
+                    </div>
+
                     <div className="col-span-2 pt-2 border-t border-zinc-200/50 space-y-0.5">
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
                         Deskripsi Kendala

@@ -1,6 +1,6 @@
 "use client";
 
-import { X, UserCheck, UserX, CheckCircle2, Building2, Phone } from "lucide-react";
+import { X, UserCheck, UserX, CheckCircle2, Building2, Phone, User } from "lucide-react";
 
 const ViewTicketModal = ({ ticket, isOpen, onClose }) => {
   if (!isOpen || !ticket) return null;
@@ -83,32 +83,37 @@ const ViewTicketModal = ({ ticket, isOpen, onClose }) => {
             )}
           </div>
 
-          {/* Informasi Pelapor / OPD */}
+          {/* Informasi Pelapor & OPD */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-zinc-900 uppercase tracking-wider font-mono">
-              Informasi OPD
+              Informasi Pelapor & OPD
             </h4>
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl border border-zinc-100 bg-white">
+              {/* Informasi Pelapor */}
+              <div className="p-3 rounded-xl border border-zinc-100 bg-white space-y-1">
                 <div className="flex items-center gap-1.5 text-zinc-400 mb-1">
-                  <Building2 className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-semibold uppercase">Nama OPD</span>
+                  <User className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-semibold uppercase">Pelapor</span>
                 </div>
-                <p className="font-bold text-zinc-800">
-                  {ticket.opd?.nama || "-"}
+                <p className="font-bold text-zinc-800 truncate">
+                  {ticket.nama_pelapor || "-"}
+                </p>
+                <p className="text-[11px] text-zinc-500 font-mono truncate">
+                  {ticket.kontak_pelapor || "-"}
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl border border-zinc-100 bg-white">
+              {/* Informasi OPD */}
+              <div className="p-3 rounded-xl border border-zinc-100 bg-white space-y-1">
                 <div className="flex items-center gap-1.5 text-zinc-400 mb-1">
-                  <Phone className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-semibold uppercase">PIC & Kontak</span>
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-semibold uppercase">Instansi OPD</span>
                 </div>
-                <p className="font-bold text-zinc-800">
-                  {ticket.opd?.nama_pic || "-"}
+                <p className="font-bold text-zinc-800 truncate">
+                  {ticket.opd?.nama || "-"}
                 </p>
-                <p className="text-[11px] text-zinc-500 font-mono">
-                  {ticket.opd?.kontak_pic || "-"}
+                <p className="text-[11px] text-zinc-500 truncate">
+                  PIC: {ticket.opd?.nama_pic || "-"}
                 </p>
               </div>
             </div>

@@ -55,7 +55,7 @@ export async function getReportPageData(clientToken) {
   }
 }
 
-export async function createTicketReport({ opdId, issueDescription }) {
+export async function createTicketReport({ opdId, issueDescription, namaPelapor, kontakPelapor }) {
   try {
     const activeTicket = await prisma.ticket.findFirst({
       where: {
@@ -72,6 +72,8 @@ export async function createTicketReport({ opdId, issueDescription }) {
       data: {
         opdId,
         deskripsi_masalah: issueDescription,
+        nama_pelapor: namaPelapor,
+        kontak_pelapor: kontakPelapor,
         status: "menunggu",
       },
     });

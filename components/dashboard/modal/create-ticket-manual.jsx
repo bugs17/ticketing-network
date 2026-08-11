@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { TicketPlus, X, Loader2, AlertCircle } from "lucide-react";
+import { TicketPlus, X, Loader2, AlertCircle, User, Phone } from "lucide-react";
 import { createTicketByAdmin } from "@/app/actions/create-ticket-by-admin";
-// import { createTicketAction } from "@/app/actions/create-ticket-action";
-
 
 const CreateTicketManual = ({ isModalTicketOpen, setIsModalTicketOpen, setTicketList, opdList }) => {
   if (!isModalTicketOpen) {
@@ -16,6 +14,8 @@ const CreateTicketManual = ({ isModalTicketOpen, setIsModalTicketOpen, setTicket
 
   const initialFormState = {
     opdId: "",
+    nama_pelapor: "",
+    kontak_pelapor: "",
     deskripsi_masalah: "",
   };
 
@@ -29,9 +29,19 @@ const CreateTicketManual = ({ isModalTicketOpen, setIsModalTicketOpen, setTicket
       return;
     }
 
+    if (!formState.nama_pelapor.trim()) {
+      setErrorMsg("Nama pelapor wajib diisi.");
+      return;
+    }
+
+    if (!formState.kontak_pelapor.trim()) {
+      setErrorMsg("Kontak pelapor wajib diisi.");
+      return;
+    }
+
     startTransition(async () => {
       // Panggil Server Action untuk pembuatan tiket manual
-      const {data,error,success} = await createTicketByAdmin(formState);
+      const { data, error, success } = await createTicketByAdmin(formState);
 
       if (!success) {
         setErrorMsg(error || "Gagal membuat tiket.");
@@ -82,39 +92,66 @@ const CreateTicketManual = ({ isModalTicketOpen, setIsModalTicketOpen, setTicket
             </div>
           )}
 
-            {/* Pilih Instansi / OPD */}
-            <div className="space-y-1.5">
+          {/* Pilih Instansi / OPD */}
+          <div className="space-y-1.5">
             <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
-                Pilih Instansi / OPD <span className="text-red-500">*</span>
+              Pilih Instansi / OPD <span className="text-red-500">*</span>
             </label>
 
             <select
-                value={formState.opdId}
-                onChange={(e) => setFormState({ ...formState, opdId: e.target.value })}
-                disabled={!opdList || opdList.length === 0}
-                className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm text-zinc-800 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed"
+              value={formState.opdId}
+              onChange={(e) => setFormState({ ...formState, opdId: e.target.value })}
+              disabled={!opdList || opdList.length === 0}
+              className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm text-zinc-800 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed"
             >
-                <option value="" disabled>
+              <option value="" disabled>
                 {!opdList || opdList.length === 0
-                    ? "-- Belum ada data OPD --"
-                    : "-- Pilih Instansi / OPD --"}
-                </option>
+                  ? "-- Belum ada data OPD --"
+                  : "-- Pilih Instansi / OPD --"}
+              </option>
 
-                {Array.isArray(opdList) &&
+              {Array.isArray(opdList) &&
                 opdList.map((opd) => (
-                    <option key={opd.id || opd.nama} value={opd.id}>
+                  <option key={opd.id || opd.nama} value={opd.id}>
                     {opd.nama}
-                    </option>
+                  </option>
                 ))}
             </select>
 
-            {/* Warning tambahan jika data OPD di database masih kosong */}
             {(!opdList || opdList.length === 0) && (
-                <p className="text-[10px] text-amber-600 mt-1">
+              <p className="text-[10px] text-amber-600 mt-1">
                 Belum ada instansi/OPD yang terdaftar. Tambahkan OPD terlebih dahulu.
-                </p>
+              </p>
             )}
-            </div>
+          </div>
+
+          {/* Nama Pelapor */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-zinc-400" /> Nama Pelapor <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Masukkan nama pelapor..."
+              value={formState.nama_pelapor}
+              onChange={(e) => setFormState({ ...formState, nama_pelapor: e.target.value })}
+              className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm text-zinc-800"
+            />
+          </div>
+
+          {/* Kontak Pelapor */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-zinc-400" /> Kontak / WhatsApp Pelapor <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Contoh: 081234567890"
+              value={formState.kontak_pelapor}
+              onChange={(e) => setFormState({ ...formState, kontak_pelapor: e.target.value })}
+              className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm text-zinc-800"
+            />
+          </div>
 
           {/* Detail Deskripsi */}
           <div className="space-y-1.5">
@@ -129,8 +166,6 @@ const CreateTicketManual = ({ isModalTicketOpen, setIsModalTicketOpen, setTicket
               className="w-full px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 transition-colors shadow-sm resize-none"
             />
           </div>
-
-          
 
         </div>
 

@@ -36,6 +36,8 @@ function OPDReportingContent() {
 
   // Form Input
   const [issueDescription, setIssueDescription] = useState("");
+  const [namaPelapor, setNamaPelapor] = useState("");
+  const [kontakPelapor, setKontakPelapor] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [generatedTicketId, setGeneratedTicketId] = useState("");
 
@@ -76,8 +78,8 @@ function OPDReportingContent() {
     e.preventDefault();
     if (hasActiveTicket || !opdData) return;
 
-    if (!issueDescription) {
-      alert("Harap isi deskripsi kendala.");
+    if (!namaPelapor || !kontakPelapor || !issueDescription) {
+      alert("Harap isi Nama Pelapor, Kontak Pelapor, dan Deskripsi Kendala.");
       return;
     }
 
@@ -86,6 +88,8 @@ function OPDReportingContent() {
     const res = await createTicketReport({
       opdId: opdData.id,
       issueDescription,
+      namaPelapor,
+      kontakPelapor,
     });
 
     setIsSubmitting(false);
@@ -217,7 +221,31 @@ function OPDReportingContent() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-zinc-400" /> Deskripsi Kerusakan
+                  <User className="w-3.5 h-3.5 text-zinc-400" /> Nama Pelapor <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text" required placeholder="Masukkan nama Anda..."
+                  disabled={hasActiveTicket || isSubmitting}
+                  value={namaPelapor} onChange={(e) => setNamaPelapor(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 disabled:bg-zinc-100 disabled:cursor-not-allowed shadow-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-zinc-400" /> Nomor Kontak / WhatsApp <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text" required placeholder="Contoh: 081234567890"
+                  disabled={hasActiveTicket || isSubmitting}
+                  value={kontakPelapor} onChange={(e) => setKontakPelapor(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-zinc-200 rounded-xl text-xs focus:outline-none focus:border-zinc-950 disabled:bg-zinc-100 disabled:cursor-not-allowed shadow-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-zinc-400" /> Deskripsi Kerusakan <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   rows={3} required placeholder="Jelaskan detail permasalahan teknis..."
@@ -302,6 +330,17 @@ function OPDReportingContent() {
 
                       {isExpanded && (
                         <div className="px-3.5 pb-3.5 pt-1 border-t border-zinc-100 space-y-3 bg-white">
+                          <div className="grid grid-cols-2 gap-2 text-xs pt-2">
+                            <div className="space-y-0.5 bg-zinc-50 p-2.5 rounded-xl border border-zinc-100">
+                              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Pelapor</span>
+                              <p className="text-zinc-800 font-semibold truncate">{ticket.nama_pelapor || "-"}</p>
+                            </div>
+                            <div className="space-y-0.5 bg-zinc-50 p-2.5 rounded-xl border border-zinc-100">
+                              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Kontak</span>
+                              <p className="text-zinc-800 font-mono text-[11px] font-semibold truncate">{ticket.kontak_pelapor || "-"}</p>
+                            </div>
+                          </div>
+
                           <div className="space-y-1 text-xs">
                             <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Deskripsi Kendala:</span>
                             <p className="text-zinc-700 leading-relaxed font-medium">{ticket.deskripsi_masalah || "-"}</p>
